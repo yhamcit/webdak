@@ -1,15 +1,35 @@
 
+
+from urllib.parse import urlsplit
+from webapps.modules.requests.dao.http_errors import HttpInvalidUrl
 from webapps.modules.requests.httpcall import HttpCall
+from webapps.modules.requests.httpheaders import HttpHeaders
 from webapps.modules.requests.httpsession import HttpSession
 from webapps.modules.requests.httpresponse import HttpResponseParser
 from webapps.modules.requests.httpinterceptor import HttpInterceptor
 from webapps.modules.requests.httpheadhandler import HttpHeadHandler
 
+
+
 class HttpCallBuilder(object):
 
     def __init__(self, base_url: str = "", http_session: HttpSession = None) -> None:
         self._base_url = base_url
-        self._http_session = http_session
+
+        try:
+            url_structured = urlsplit(self.base_url)
+        except Exception as error:
+            # TODO : Handle exception
+            raise HttpInvalidUrl(error.args)
+        
+        if not all((url_structured.scheme, url_structured.hostname, url_structured.path)):
+            raise HttpInvalidUrl("Base url didn't carry all required fields")
+
+        if http_session:
+            self._http_session = http_session
+        else:
+            self._http_session = HttpSession(url_structured.scheme, url_structured.hostname, url_structured.geturl())
+
         self._http_interceptor = None
         self._http_head_handler = None
         self._http_reponse_parser = None
@@ -19,7 +39,7 @@ class HttpCallBuilder(object):
         return self._base_url
     
     @base_url.setter
-    def base_url(self, base_url) -> None:
+    def base_url(self, base_url: str) -> None:
         self._base_url = base_url
 
     @property
@@ -27,7 +47,10 @@ class HttpCallBuilder(object):
         return self._http_session
     
     @http_session.setter
-    def http_session(self, http_session) -> None:
+    def http_session(self, http_session: HttpSession) -> None:
+        if not http_session:
+            raise Exception(f"Invalide http session: {http_session} ")
+
         self._http_session = http_session
 
     @property
@@ -35,62 +58,63 @@ class HttpCallBuilder(object):
         return self._http_head_handler
     
     @http_head_handler.setter
-    def http_head_handler(self, handler) -> None:
-        self._http_head_handler = handler
+    def http_head_handler(self, http_head_handler: HttpHeadHandler) -> None:
+        if not http_head_handler:
+            raise Exception(f"Invalide http head handler: {http_head_handler} ")
+        
+        self._http_head_handler = http_head_handler
 
     @property
     def response_parser(self) -> str:
-        return self._response_parser
+        return self._http_reponse_parser
     
     @response_parser.setter
-    def response_parser(self, parser) -> None:
-        self._response_parser = parser
+    def response_parser(self, parser: HttpResponseParser) -> None:
+        if not parser:
+            raise Exception(f"Invalide http parser: {parser} ")
+        
+        self._http_reponse_parser = parser
 
     @property
-    def http_interceptor(self) -> str:
+    def http_interceptor(self) -> HttpInterceptor:
         return self._http_interceptor
     
     @http_interceptor.setter
-    def http_interceptor(self, interceptor) -> None:
+    def http_interceptor(self, interceptor: HttpInterceptor) -> None:
+        if not interceptor:
+            raise Exception(f"Invalide http interceptor{interceptor} ")
+        
         self._http_interceptor = interceptor
 
     @property
-    def interceptor(self) -> HttpInterceptor:
-        return self._interceptor
+    def headers(self) -> HttpHeaders:
+        return self._http_session.headers
     
-    @interceptor.setter
-    def interceptor(self, interceptor: HttpInterceptor) -> None:
-        self._interceptor = interceptor
+    @headers.setter
+    def headers(self, headers: HttpHeaders) -> None:
+        self._http_session.headers = headers
 
+    def build(self, cls, env_pack: dict, api_path: str =None, api_method: str =None, http_session: HttpSession=None, interceptor: HttpInterceptor=None, parser: HttpResponseParser=None) -> HttpCall:
 
-    def set_session(self, httpsession: HttpSession) -> None:
-        self._http_session = httpsession
+        assert issubclass(cls, HttpCall)
+        http_call = cls(self.base_url, api_path =api_path, api_method =api_method)
+
+        if env_pack:
+            pass
+
+        if http_session:
+            http_call.http_session = http_session
+        else:
+            http_call.http_session = self._http_session
         
-    def set_http_head_handler(self, handler: HttpHeadHandler) -> None:
-        # TODO: verify handler
-        self.http_head_handler = handler
+        if interceptor:
+            http_call.http_interceptor = interceptor
+        elif self.http_interceptor:
+            http_call.http_interceptor = self._http_interceptor
 
-    def set_response_parser(self, parser: HttpResponseParser) -> None:
-        # TODO: verifi parser
-        self.response_parser = parser
+        if parser:
+            http_call.response_parser = parser
+        elif self.response_parser:
+            http_call.response_parser = self._http_reponse_parser
         
-    def set_http_interceptor(self, interceptor: HttpInterceptor) -> None:
-        # TODO: verify interceptor
-        self._http_interceptor = interceptor
-
-
-    def build(self, cls) -> HttpCall:
-        # TODO: verify class
-        http_call = cls()
-        
-        http_call.base_url = self.base_url
-        http_call.http_session = self.http_session
-        http_call.response_parser = self.response_parser
-
-        if self.http_head_handler:
-            http_call.set_head_handler(self._http_interceptor)
-        
-        if self.http_interceptor:
-            http_call.set_http_interceptor(self._http_interceptor)
-
         return http_call

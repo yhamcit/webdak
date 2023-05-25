@@ -1,56 +1,82 @@
-from flask import Flask, request
-from webapps.actors.tplus.auth.appticketactor import AppTicketActor
-from webapps.model.properties.dao.actorenvironment import ActorsEnvironment
 
-from webapps.model.properties.preference import Preference
+from quart import Quart
 
-from webapps.endpoints.tplus.auth.appticket import AppTicket
-from webapps.modules.asyncoroutine.promisepool import PromisePool
-
+from webapps.plugins.tplus.core import TplusPlugin
 from webapps.modules.lumber.lumber import Lumber
 
 
-__timber = Lumber.timber("root")
+
+_timber = Lumber.timber("root")
+_err_timber = Lumber.timber("error")
+
+_timber.info("Logging created. Prepare to launch.")
+_timber.info("Creating webapps...")
+
+app = Quart(__name__)
+
+_timber.info("Webapp enter running status.")
 
 
-app = Flask(__name__)
-
-
-
-@app.route("/actors/tplus/auth/appToken", methods=["GET", "POST"])
-async def actor_tplus_app_token():
-    __timber.info("/actors/tplus/auth/appToken")
-
-    if request.method == "POST":
-        app_ticket = await AppTicketActor().renew_app_token()
-    elif request.method == "GET":
-        app_ticket = await AppTicketActor().exchange_app_token()
-    else:
-        return "rejected"
-    
-    return app_ticket
-
-
+# # health Check
 @app.route("/endpoints/healthz")
 async def hello():
-    __timber.info("/endpoints/tplus/auth/appToken")
-    return "ok!"
+    _timber.info("/endpoints/healthz")
 
-@app.route("/endpoints/tplus/auth/appTicket", methods=["POST"])
-async def ep_tplus_auth_apptoken():
-    __timber.info("/endpoints/tplus/auth/appToken")
+    try:
+        return TplusPlugin.success()
+    except Exception as error:
+        _err_timber.error(f"Caught exception: '{error}'.")
+        return TplusPlugin.failure()
 
-    __timber.info(request.json)
 
-    promise = PromisePool().make_the_promise("actors_channel", "/endpoints/tplus/auth/appTicket", 
-                                             "webapps.endpoints.tplus.auth.appticket.AppTicket")
-    
-    actor = AppTicketActor()
-    result = actor.decrypt_push_message(request.json)
-    token = AppTicket(result)
+# tplus_endpoints_promise = PromiseIdentifier("tplus_endpoints_channel", "tplus_broker", "/endpoints/tplus/broker")
+# @app.route(tplus_endpoints_promise.id, methods=["GET", "POST"])
+# async def broker_tplus_endpoints():
+#     _timber.info(tplus_endpoints_promise.id)
 
-    promise.resovle(token)
+#     try:
+#         return await None # 
+#     except Exception as error:
+#         _err_timber.error(f"Caught exception: '{error}'.")
+#         return TplusPlugin.failure()
 
-    return AppTicketActor.success()
+
+# cbs_endpoints_promise = PromiseIdentifier("cbs_endpoints_channel", "cbs_broker", "/endpoints/cbs/broker")
+# @app.route(cbs_endpoints_promise.id, methods=["GET", "POST"])
+# async def broker_cbs_endpoints():
+#     _timber.info(cbs_endpoints_promise.id)
+
+#     try:
+#         return await None # 
+#     except Exception as error:
+#         _err_timber.error(f"Caught exception: '{error}'.")
+#         return TplusPlugin.failure()
+
+
+
+# app_tocken_actr_promise = PromiseIdentifier("tplus_actuators_channel", "tplus_authen", "/actuators/tplus/auth/appToken")
+# @app.route(app_tocken_actr_promise.id, methods=["GET", "POST"])
+# async def actor_tplus_app_token():
+#     _timber.info(app_tocken_actr_promise.id)
+
+#     try:
+#         return await TplusPlugin().handle_msg(app_tocken_actr_promise, request)
+#     except Exception as error:
+#         _err_timber.error(f"Caught exception: '{error}'.")
+#         return TplusPlugin.failure()
+
+
+# tplus_authn_promise = PromiseIdentifier("tplus_actuators_channel", "tplus_authen", "/endpoints/tplus/push_msg")
+# @app.route(tplus_authn_promise.id, methods=["POST"])
+# async def endpoints_tplus_pushmsg():
+#     _timber.info(f"Get endpoints_tplus_pushmsg via - {tplus_authn_promise.id}")
+
+#     try:
+#         return await TplusPlugin().handle_msg(tplus_authn_promise, request)
+#     except Exception as error:
+#         _err_timber.error(f"Caught exception: '{error}'.")
+#         return TplusPlugin.success()
+
+
 
 

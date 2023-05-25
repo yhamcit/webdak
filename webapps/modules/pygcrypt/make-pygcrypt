@@ -1,0 +1,27 @@
+#! /usr/bin/bash
+
+export LIBDIR=/opt/python/lib/libgcrypt
+# export LIBDIR=/usr/local/lib
+
+export LD_LIBRARY_PATH=${LIBDIR}
+export LD_RUN_PATH=${LIBDIR}
+
+rm -f build/lib.linux-x86_64-cpython-311/pygcrypt.cpython-311-x86_64-linux-gnu.so && x86_64-linux-gnu-gcc -pthread -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions -Wl,-rpath -Wl,/usr/local/lib -g -fwrapv -O2 build/temp.linux-x86_64-cpython-311/pygcrypt.o -L/opt/webdak/webapps/modules/pygcrypt -l:libgcrypt.so.20.4.2 -o build/lib.linux-x86_64-cpython-311/pygcrypt.cpython-311-x86_64-linux-gnu.so
+
+echo 'library: gcrypt could be found and linked via: '
+libgcrypt-config --libs
+
+echo 'Clean builds.'
+rm -rf pygcrypt.c pygcrypt.cpython-311-x86_64-linux-gnu.so build
+
+python setup.py build_ext --inplace
+
+rm -f build/lib.linux-x86_64-cpython-311/pygcrypt.cpython-311-x86_64-linux-gnu.so
+x86_64-linux-gnu-gcc -pthread -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions \
+-Wl,-rpath -Wl,${LIBDIR} -g -fwrapv -O2 build/temp.linux-x86_64-cpython-311/pygcrypt.o -l:libgcrypt.so.20.4.2 -o build/lib.linux-x86_64-cpython-311/pygcrypt.cpython-311-x86_64-linux-gnu.so
+
+cp build/lib.linux-x86_64-cpython-311/pygcrypt.cpython-311-x86_64-linux-gnu.so ./
+
+chown webdak:users pygcrypt.cpython-311-x86_64-linux-gnu.so pygcrypt.c
+
+ldd pygcrypt.cpython-311-x86_64-linux-gnu.so

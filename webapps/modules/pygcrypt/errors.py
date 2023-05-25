@@ -1,0 +1,4 @@
+
+
+class GcryptException(Exception):
+    pass

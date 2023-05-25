@@ -1,23 +1,32 @@
+from typing import Generator
+import httpx
 
-from urllib import parse as urlparser
 from urllib.parse import ParseResult as UrlStructured
 
 from httpx import Response
+from http.cookiejar import Cookie, CookieJar
 
-from webapps.language.errors.httperror import HttpSessionInitialized
-from webapps.modules.requests.httpcookie import HttpCookie, HttpCookieJar
+from webapps.modules.requests.dao.http_errors import HttpSessionInitialized
 from webapps.modules.requests.httpheaders import HttpHeaders
+from webapps.modules.requests.httpheadhandler import HttpHeadHandler
 
 class HttpSession(object):
 
-    def __init__(self, scheme: str = "", hostname: str = "", sessionid: str = "") -> None:
+    def __init__(self, scheme: str = "", hostname: str = "", sessionid: str = "", headers: HttpHeaders=None, handler: HttpHeadHandler=None) -> None:
         self._url_object = None
         self._scheme = scheme
         self._hostname = hostname
         self._sessionid = sessionid
-        self._headers = HttpHeaders()
-        self._cookies = HttpCookie()
-        self._cookiejar = self.cookies.cookiejar
+
+        if not headers:
+            self._headers = HttpHeaders()
+        else:
+            self._headers = headers
+
+        if not handler:
+            self._handler = handler
+
+        self._cookie_jar = CookieJar()
 
     @property
     def url(self) -> UrlStructured:
@@ -60,25 +69,30 @@ class HttpSession(object):
         self._headers = headers
 
     @property
-    def cookies(self) -> HttpCookie:
-        return self._cookies
-
-    @property
-    def cookiejar(self) -> HttpCookieJar:
-        return self._cookiejar
+    def cookies(self) -> Generator[Cookie, None, None]:
+        return (cookie for cookie in self._cookie_jar)
     
     @cookies.setter
-    def cookiejar(self, cookiejar: HttpCookieJar) -> None:
-        self._cookiejar = cookiejar
+    def cookies(self, cookies: tuple[Cookie]) -> None:
+        for cookie in cookies:
+            self._cookie_jar.set_cookie_if_ok(cookie)
+
+    @property
+    def cookie_jar(self) -> Cookie:
+        return self._cookie_jar
+    
+    @cookie_jar.setter
+    def cookie_jar(self, cookiejar: CookieJar) -> None:
+        self._cookie_jar = cookiejar
 
     def initialize(self, url: UrlStructured, sessionid: str) -> None:
-        # TODO: verify url_object
+
+        if not url:
+            raise Exception(f"Invalid url {url}")
 
         if self.host:
             if self.host != url.host:
-                raise HttpSessionInitialized(
-                    "HTTP session with {host} have already been initialized as id: {sessionid}."\
-                        .format(host = self.host, sessionid = self.sessionid))
+                raise HttpSessionInitialized(f"HTTP session with {self.host} have already been initialized as id: {self.sessionid}.")
 
         self.url = url
         self.scheme = url.scheme
@@ -86,11 +100,27 @@ class HttpSession(object):
         self.sessionid = sessionid
 
 
-    def draw_cookie_update(self, response: Response) -> None:
-        self.cookies.extract_cookies(response)
+    def draw_cookie_update(self, response: httpx.Response) -> CookieJar:
+        jar = self._cookie_jar.extract_cookies(response)
 
-    def make_headers(self, headers: dict) -> dict:
-        return self.headers.merge(headers)
+        # TODO: deal with cookie jar
+        return jar
+
+    def pickup_headers(self, response: httpx.Response=None):
+
+        assert response
+
+        headers = HttpHeaders(defaults=response.headers)
+
+        # TODO: deal with cookies
+        # jar = self.draw_cookie_update(response)
+        # self.cookie_jar.update(jar)
+
+        if self._handler:
+            response = self._handler.pickup_headers(headers)
+
+        return response
 
 
-    
+    def supplement_headers(self, headers: dict) -> dict:
+        return self._headers.union(headers)

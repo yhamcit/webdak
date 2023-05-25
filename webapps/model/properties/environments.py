@@ -1,45 +1,54 @@
+from functools import reduce
 from os import environ
 import argparse
 
 import rtoml
 
 from pathlib import Path
+ 
+from webapps.modules.lumber.lumber import Lumber
+from webapps.language.decorators.singleton import Singleton
 
-from webapps.model.properties.dao.databaseenvironment import DatabaseEnvironment
-from webapps.language.decorators.singleton import singleton
+from webapps.model.properties.dao.env_errors import ConfigFileError
+from webapps.model.properties.dao.env_errors import ConfigContentError
 
-from webapps.language.errors.enverror import ConfigFileError
-from webapps.language.errors.enverror import ConfigContentError
 
-@singleton
+_err_timber = Lumber.timber("error")
+
+
+@Singleton
 class Evironments(object):
 
-    __DEPLOYMENT__ = "deployment"
-    __PROMISEPOOl__ = "promisepool"
-    __LOGGING__ = "lumber"
-    __REDIS__ = "redis"
-    __DATABASE__ = "database"
-    __ACTORS__ = "actors"
+    _DEPLOYMENT_        = "deployment"
+    _PROMISEPOOl_       = "promisepool"
+    _LOGGING_           = "lumber"
+    _REDIS_             = "redis"
+    _DATABASE_          = "database"
+    _PLUGINS_           = "plugins"
+    _PLUGIN_INCLUDES_   = "includes"
+
+    _CONFIG_ENV_        = "WEBDAK_CONF"
+    _CONFIG_PATH_       = "./conf/default.toml"
+
 
     def __init__(self) -> None:
-        __CONFIG_ENV = "WEBDAK_CONF"
-        __CONFIG_PATH = "./conf/webdak.conf.d/default.toml"
+        self._configuration = None
 
-        parser = argparse.ArgumentParser(description='Starts web-dak service.')
-
+        parser = argparse.ArgumentParser(description='Starts webdak service.')
         parser.add_argument("-c", "--config", 
                                 help = "Specify the path to load configuration file.", type = str)
-        
         args, unkown = parser.parse_known_args()
 
-        conf_uri = __CONFIG_PATH
+        self.conf_uri = Evironments._CONFIG_PATH_
         if args.config:
-            conf_uri = args.config
-        elif __CONFIG_ENV in environ:
-            conf_uri = environ[__CONFIG_ENV]
+            self.conf_uri = args.config
+        elif Evironments._CONFIG_ENV_ in environ:
+            self.conf_uri = environ[Evironments._CONFIG_ENV_]
 
+
+    def load(self):
         try:
-            self._configuration = rtoml.load(Path(conf_uri))
+            self._configuration = rtoml.load(Path(self.conf_uri))
         except FileNotFoundError as error:
             # TODO: dig error context & info
             raise ConfigFileError()
@@ -48,41 +57,40 @@ class Evironments(object):
             raise ConfigContentError()
 
     @property
-    def deployment(self) -> dict:
-        return self._configuration[Evironments.__DEPLOYMENT__]
-    
-    @property
     def promisepool(self) -> dict:
-        return self._configuration[Evironments.__PROMISEPOOl__]
+        return self._configuration[Evironments._PROMISEPOOl_]
     
     @property
     def logging(self) -> dict:
-        return self._configuration[Evironments.__LOGGING__]
+        return self._configuration[Evironments._LOGGING_]
 
     @property
     def deployment(self) -> list:
-        return self._configuration[Evironments.__DEPLOYMENT__]
+        return self._configuration[Evironments._DEPLOYMENT_]
 
     @property
     def redis(self) -> list:
-        return self._configuration[Evironments.__REDIS__]
+        return self._configuration[Evironments._REDIS_]
 
     @property
     def database(self) -> dict:
-        return self._configuration[Evironments.__DATABASE__]
+        return self._configuration[Evironments._DATABASE_]
 
     @property
-    def actors(self) -> dict:
-        return self._configuration[Evironments.__ACTORS__]
+    def plugins(self) -> dict:
+        plugin_profiles = dict()
+
+        plugin_env = self._configuration[Evironments._PLUGINS_]
+        incld_dir = plugin_env[Evironments._PLUGIN_INCLUDES_]
+
+        try:
+            for path in (f for f in Path(Path(self.conf_uri).parent, incld_dir).rglob('**/*') if f.is_file()):
+                profile = rtoml.load(path.absolute())
+                plugin_profiles.update(profile)
+        except FileNotFoundError as error:
+            raise ConfigFileError(f"Could not read Config file. {error}")
+        except Exception as error:
+            raise ConfigContentError(f"Config file conatins invalid contents or missing permanent records. {error}")
+        
+        return plugin_profiles
     
-    # @database.setter
-    # def database(self, db_type: str) -> None:
-    #     # TODO: initialize db library/db connection property
-    #     self.__db_type = db_type
-    
-    # @db_conn.setter
-    # def db_conn(self, db_conn: DatabaseConnection) -> None:
-    #     self.__db_conn = db_conn
-
-
-

@@ -166,5 +166,20 @@ conf/
 # test/temporary 
 test/
 
+# binary files
+bin/
+
 # visual studio code
 .vscode
+
+# Python vritual environment folder
+venv-py311/
+
+# Project infrastructrue
+logrotate.d/
+nginx.d/
+ssh/
+startup.d/
+
+# Function-Specified resources
+resources/statics/CHANJET_CHECK.txt

@@ -1,6 +1,9 @@
 
-from httpx import AsyncClient
-from httpx import Response
+import functools
+
+from types import FunctionType
+
+from httpx import AsyncClient, ConnectTimeout, ReadTimeout
 
 from urllib.parse import urlsplit
 from urllib.parse import urlencode
@@ -8,130 +11,148 @@ from urllib.parse import parse_qs as urlsplit_qs
 from urllib.parse import urljoin
 from urllib.parse import quote
 from urllib.parse import SplitResult
+from webapps.model.properties.dao.env_errors import ConfigContentError
 
-from webapps.modules.asyncoroutine.promisepool import PromisePool
 
-from webapps.language.errors.httperror import HttpUrlNotValid
-from webapps.modules.requests.httpcookie import HttpCookie
+from webapps.modules.requests.dao.http_errors import HttpInvalidUrl
+from webapps.modules.lumber.lumber import Lumber
+from webapps.modules.requests.httpcall import HttpCall
 from webapps.modules.requests.httpheaders import HttpHeaders
-from webapps.modules.requests.httpsession import HttpSession
 
+
+
+_err_timber = Lumber.timber("error")
 
 class HttpMethods(object):
+
+    _API_PATH_  = 0
+    _HEADERS_   = "headers"
     
-    def __init__(self, api_path: str = "", headers: dict = {}, cookies = (), auth = None) -> None:
-        self._api_path = api_path
-        self._headers = headers
-        self._cookies = cookies
+    _HTTP_METHOD_CONNECT_   = 'CONNECT'
+    _HTTP_METHOD_DELETE_    = 'DELETE'
+    _HTTP_METHOD_GET_       = 'GET'
+    _HTTP_METHOD_HEAD_      = 'HEAD'
+    _HTTP_METHOD_OPTIONS_   = 'OPTIONS'
+    _HTTP_METHOD_PATCH_     = 'PATCH'
+    _HTTP_METHOD_POST_      = 'POST'
+    _HTTP_METHOD_PUT_       = 'PUT'
+    _HTTP_METHOD_TRACE_     = 'TRACE'
 
-    @property
-    def api_path(self) -> str:
-        return self._api_path
+    _HTTP_METHODS_SET_ = set(
+        {
+            _HTTP_METHOD_CONNECT_, 
+            _HTTP_METHOD_DELETE_, 
+            _HTTP_METHOD_GET_, 
+            _HTTP_METHOD_HEAD_, 
+            _HTTP_METHOD_OPTIONS_, 
+            _HTTP_METHOD_PATCH_, 
+            _HTTP_METHOD_POST_, 
+            _HTTP_METHOD_PUT_, 
+            _HTTP_METHOD_TRACE_
+        }
+    )
 
-    @property
-    def headers(self) -> str:
-        return self._headers
+    _timber = Lumber.timber("plugins")
 
-    @property
-    def cookies(self) -> str:
-        return self._cookies
 
-    @api_path.setter
-    def api_path(self, api_path) -> None:
-        self._api_path = api_path
+    @staticmethod
+    def determine_protocol_version(http_call: HttpCall, protocol):
 
-    def finalize_url(self, base_url, path_template, params = {}, fragment = "", urlargv: dict = {}) -> str:
+        return (protocol == 'HTTP/2')
+
+    @staticmethod
+    def finalize_url(http_call: HttpCall, path_template, params= {}, fragment= "", argv: dict= {}) -> str:
         try:
-            api_path = path_template.format(**urlargv)
+            api_path = path_template.format(**argv)
             split_result = urlsplit(api_path)
             result_query = urlsplit_qs(split_result.query)
 
-            for key, value in result_query:
-                if key in params:
-                    v = params[key]
-                    value.extend(v) if isinstance(v, list) else value.append(v)
+            if params:
+                if not result_query:
+                    result_query = list(params.items())
+                else:
+                    for key, value in result_query:
+                        if key in params:
+                            v = params[key]
+                            value.extend(v) if isinstance(v, list) else value.append(v)
             
             relative_url = SplitResult(split_result.scheme, split_result.netloc, api_path, \
                                       urlencode(result_query), fragment) \
                                         .geturl()
 
-            return urljoin(base_url, relative_url)
+            return urljoin(http_call.base_url, relative_url)
 
-        except Exception as error:
-            raise HttpUrlNotValid(error)
+        except Exception as excp_err:
+            raise HttpInvalidUrl(excp_err)
         
-    def make_session_headers(self, session: HttpSession) -> dict:
-        
-        return session.make_headers(self.headers)
+    @staticmethod
+    def inflate_session_headers(http_call: HttpCall, header_filter: tuple, cust_headers: dict) -> dict:
+
+        try:
+            headers = http_call.http_session.supplement_headers(cust_headers)
+            return dict({key: headers[key] for key in header_filter})
+        except KeyError as excp_err:
+            raise ConfigContentError(excp_err)
+
+
+    @staticmethod
+    async def call(http_call: HttpCall, method: str, http2: bool, url: str, headers: dict, func: FunctionType, **kwargs):
+            
+        session = http_call.http_session
+
+        async with AsyncClient(http2=http2) as client:
+            try:
+                response = await client.request(method, url, headers = headers, cookies = session.cookies, **kwargs)
+                session.pickup_headers(response)
+
+                return func(http_call, response)
+            except ReadTimeout as excp_err:
+                HttpMethods._timber.critical(f"Network timeout: {excp_err.request}")
+            except ConnectTimeout as excp_err:
+                HttpMethods._timber.critical(f"Connection timeout: {excp_err.request}")
+            except Exception as excp_err:
+                HttpMethods._timber.critical(f"Unexpected exception: {excp_err}, cauz: {excp_err.args}")
+                raise(excp_err)
 
     @staticmethod
     def raise_on_4xx_5xx(response):
         response.raise_for_status()
 
-# class AsyncWaitOn:
+    @staticmethod
+    def REQUEST(call_path: str=None, 
+                call_method: str = None, 
+                header_filter:tuple =HttpHeaders._HTTP_DEFAULT_HEADERS_LIST_, 
+                cust_headers: dict = HttpHeaders._HTTP_DEFAULT_HEADERS_, 
+                protocol: str='HTTP/1.1'):
 
-#     def __call__(func):
-#         def decorator():
-#             async def wrapper():
-#                 try:
-#                     app_promise = await PromisePool().the_promise("chanjet-tplus", "app_ticket", str(time()))
-#                 except StopAsyncIteration as done:
-#                     app_promise = done.value
+        def decorator(func):
 
-#                 try:
-#                     app_ticket_push = await app_promise
-#                 except StopAsyncIteration as done:
-#                     app_ticket_push = done.value
-#             return wrapper            
-#         return decorator
-        
+            async def decroation(http_call: HttpCall, *args, url_params: dict= {}, url_fragments: str= "", url_argv: dict= {}, **kwargs):
 
-class Get(HttpMethods):
+                http_path  = call_path if call_path else http_call.api_path
 
-    def __init__(self, api_path: str, headers: dict = {}, cookies: HttpCookie = None, auth: object = None) -> None:
-        super().__init__(api_path, headers = headers, cookies = cookies)
+                http_method = call_method if call_method else http_call.api_method
+                assert http_method in HttpMethods._HTTP_METHODS_SET_
 
+                url_encoded = HttpMethods.finalize_url(http_call, http_path, params =url_params,
+                                                       fragment =url_fragments, argv =url_argv)
+                
+                headers = HttpMethods.inflate_session_headers(http_call, header_filter, cust_headers)
 
-    def __call__(self, func):
-        async def wrapper(http_call, *args, params = {}, fragment = "", urlargv = {}, **kwargs):
+                http2_enable = HttpMethods.determine_protocol_version(http_call, protocol)
 
-            session = http_call.http_session
-            headers = self.make_session_headers(session)
-            url_encoded = self.finalize_url(http_call.base_url, self.api_path, 
-                                            params = params, fragment = fragment, 
-                                            urlargv = urlargv)
+                return await HttpMethods.call(http_call, http_method, http2_enable, url_encoded, headers, func, **kwargs)
+            
+            return decroation
 
-            async with AsyncClient(event_hooks={'response': [HttpMethods.raise_on_4xx_5xx]}) as client:
-                response = await client.get(url_encoded, params = params, 
-                                            headers = headers, cookies = session.cookies,
-                                            **kwargs)
-                session.draw_cookie_update(response)
+        return decorator
 
-            return func(http_call, response)
-
-        return wrapper
-
-
-class Post(HttpMethods):
-
-    def __init__(self, api_path: str, headers: dict = {}, cookies: HttpCookie = None, auth: object = None) -> None:
-        super().__init__(api_path, headers = headers, cookies = cookies)
-
-    def __call__(self, func):
-        async def wrapper(http_call, *args, params = {}, fragment = "", urlargv = {}, **kwargs):
-
-            session = http_call.http_session
-            headers = self.make_session_headers(session)
-            url_encoded = self.finalize_url(http_call.base_url, self.api_path, 
-                                            params = params, fragment = fragment, 
-                                            urlargv = urlargv)
-
-            async with AsyncClient(event_hooks={'response': [HttpMethods.raise_on_4xx_5xx]}) as client:
-                response = await client.get(url_encoded, params = params, 
-                                            headers = headers, cookies = session.cookies,
-                                            **kwargs)
-                session.draw_cookie_update(response)
-
-            return func(http_call, response)
-
-        return wrapper
+    CONNECT = functools.partial(REQUEST, call_method =_HTTP_METHOD_CONNECT_)
+    DELETE  = functools.partial(REQUEST, call_method =_HTTP_METHOD_DELETE_)
+    GET     = functools.partial(REQUEST, call_method =_HTTP_METHOD_GET_)
+    HEAD    = functools.partial(REQUEST, call_method =_HTTP_METHOD_HEAD_)
+    OPTIONS = functools.partial(REQUEST, call_method =_HTTP_METHOD_OPTIONS_)
+    PATCH   = functools.partial(REQUEST, call_method =_HTTP_METHOD_PATCH_)
+    POST    = functools.partial(REQUEST, call_method =_HTTP_METHOD_POST_)
+    PUT     = functools.partial(REQUEST, call_method =_HTTP_METHOD_PUT_)
+    TRACE   = functools.partial(REQUEST, call_method =_HTTP_METHOD_TRACE_)
