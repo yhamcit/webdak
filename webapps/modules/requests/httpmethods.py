@@ -12,9 +12,14 @@ from urllib.parse import SplitResult
 from webapps.modules.asyncoroutine.promisepool import PromisePool
 
 from webapps.language.errors.httperror import HttpUrlNotValid
+from webapps.modules.lumber.lumber import Lumber
 from webapps.modules.requests.httpcookie import HttpCookie
 from webapps.modules.requests.httpheaders import HttpHeaders
 from webapps.modules.requests.httpsession import HttpSession
+
+
+__timber = Lumber.timber("webdak")
+
 
 
 class HttpMethods(object):
@@ -126,10 +131,16 @@ class Post(HttpMethods):
                                             params = params, fragment = fragment, 
                                             urlargv = urlargv)
 
-            async with AsyncClient(event_hooks={'response': [HttpMethods.raise_on_4xx_5xx]}) as client:
-                response = await client.get(url_encoded, params = params, 
-                                            headers = headers, cookies = session.cookies,
-                                            **kwargs)
+            async with AsyncClient() as client:
+                try:
+                    response = await client.post(url_encoded, params = params, 
+                                                headers = headers, cookies = session.cookies,
+                                                **kwargs)
+                    # __timber.error(response)
+                except BaseException as error:
+                    # __timber.error(error)
+                    raise(error)
+            
                 session.draw_cookie_update(response)
 
             return func(http_call, response)

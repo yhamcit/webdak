@@ -3,20 +3,24 @@ import json
 import base64
 
 from Crypto.Cipher import AES
+import httpx
 
 from webapps.endpoints.tplus.auth.appticket import AppTicket
 from webapps.language.errors.tpluserror import AppTicketExpired
 from webapps.model.properties.dao.actorenvironment import ActorsEnvironment
 from webapps.model.properties.dao.tplusprofile import TplusOpenApiProfile
 from webapps.modules.asyncoroutine.promisepool import PromisePool
+from webapps.modules.lumber.lumber import Lumber
 from webapps.modules.requests.httpcallrequests import HttpCallRequests
 from webapps.modules.requests.httpcall import HttpCall
 
 from webapps.language.decorators.singleton import singleton
 
-from webapps.modules.requests.httpmethods import Get
 from webapps.modules.requests.httpmethods import Post
 from webapps.modules.requests.httpresponse import HttpResponseParser
+
+
+__timber = Lumber.timber("actors")
 
 
 @singleton
@@ -25,6 +29,10 @@ class AppTicketActor(object):
     __SUCCEED__ = {"result": "success"}
 
     __FAILURE__ = {"result": "failed"}
+
+    __ACTOR_PROFILE__ = ActorsEnvironment() \
+                        .get_actor_profile(
+                            ActorsEnvironment.make_identifier(__module__, "AppTicketActor"))
 
     def __init__(self, actor_profile) -> None:
         self._app_ticket_repo = None
@@ -43,16 +51,24 @@ class AppTicketActor(object):
     async def renew_app_token(self):
         http_call = self.http_call_builder.build(TplusHttpCall)
         
-        result = await http_call.refresh_app_ticket()
+        # result = await http_call.refresh_app_ticket()
 
-        if not result:
-            pass
+        # if result:
+        #     return "OK!"
 
-        the_promise = await PromisePool().the_promise()
+        the_promise = await PromisePool().the_promise("tplus_actors_channel", "/endpoints/tplus/auth/appTicket", 
+                                             "webapps.endpoints.tplus.auth.appticket.AppTicket")
 
-        await the_promise
+        ticket = await the_promise
 
-        return await http_call.exchange_app_token(self.app_ticket)
+        certificate = AppTicketActor.__ACTOR_PROFILE__.app_token_certifcate
+
+        json_params = {
+            TplusOpenApiProfile.__APP_TICKET__: ticket.app_ticket, 
+            TplusOpenApiProfile.__CERTIFICATE__: certificate
+        }
+
+        return await http_call.exchange_app_token(json = json_params)
 
     @staticmethod
     def succeed():
@@ -86,6 +102,12 @@ class AppTicketActor(object):
     def http_call_builder(self, http_call_builder):
         self._http_call_builder = http_call_builder
 
+    def resolve_ticket(self, content: str):
+        # TODO: exception
+        infomation = self.decrypt_push_message(content)
+
+        return AppTicket(infomation)
+
     def decrypt_push_message(self, content) -> str:
 
         decrypt_key = self.actor_profile.cipher_key.encode("utf8")
@@ -99,42 +121,18 @@ class AppTicketActor(object):
         return json.loads(infomation)
 
 
-        """
-        
-        "AES/ECB/PKCS5Padding"
-
-        {
-        "encryptMsg":"E4M54v2CbwnbdG+quqWwgFGI5dgx3shx2gGZRiihvkQQLgbH12Y9/dJXO1/7H7QLL3H9fstismlYMLQrZxShEyknFJcLG96HbG4Cx/7gq4YMXgZJDI9Qvm1sH6H4arIHaPTSbHTk
-
-        faYo7fo6Sc3lwBMOpJHi33Os5u7DobPmqkzkuyoRxbTD4mZaSYleDcYuouQTdma+rubH5PPzg0+R09XsEHWkgF6cc+Ylh2w0N6590eJDNdQvoI4m7eSiWQCJo5nN5zXj/2QeQcYwIfdpmQ=="
-
-        }
-
-        {
-            "id":"85668539-205a-05cc-60ae-6ed642d8227d",  //消息ID
-            "appKey":"mMQVm4Az",   //开放平台appKey
-            "msgType":"APP_TICKET", //消息类型
-            "time":"1603856412356", //时间戳
-            "bizContent":{
-                "appTicket":"6366841b552340e4b65162d09cf88278"   //appTicket
-            }
-        }
-
-        """
-
-
 class TplusHttpCall(HttpCall):
 
-    __ACTOR_PROFILE__ = ActorsEnvironment() \
-                        .get_actor_profile(
-                            ActorsEnvironment.make_identifier(__module__, "AppTicketActor"))
+    # __ACTOR_PROFILE__ = ActorsEnvironment() \
+    #                     .get_actor_profile(
+    #                         ActorsEnvironment.make_identifier(__module__, "AppTicketActor"))
 
-    __BASE_URL__    = __ACTOR_PROFILE__.base_url
-    __APP_KEY__     = __ACTOR_PROFILE__.app_key
-    __APP_SECRET__  = __ACTOR_PROFILE__.app_secret
-    __CERTIFICATE__ = __ACTOR_PROFILE__.app_token_certifcate
-    __TICKET_PATH__ = __ACTOR_PROFILE__.app_ticket_api_path
-    __TOKEN_PATH__  = __ACTOR_PROFILE__.app_token_api_path
+    __BASE_URL__    = AppTicketActor.__ACTOR_PROFILE__.base_url
+    __APP_KEY__     = AppTicketActor.__ACTOR_PROFILE__.app_key
+    __APP_SECRET__  = AppTicketActor.__ACTOR_PROFILE__.app_secret
+    __CERTIFICATE__ = AppTicketActor.__ACTOR_PROFILE__.app_token_certifcate
+    __TICKET_PATH__ = AppTicketActor.__ACTOR_PROFILE__.app_ticket_api_path
+    __TOKEN_PATH__  = AppTicketActor.__ACTOR_PROFILE__.app_token_api_path
 
     @Post(__TICKET_PATH__, headers =
          {
@@ -142,12 +140,18 @@ class TplusHttpCall(HttpCall):
             TplusOpenApiProfile.__APP_SECRET__: __APP_SECRET__,
          })
     def refresh_app_ticket(self, response: HttpResponseParser):
-        pass
+
+        if response.status_code != httpx.codes.OK:
+            return False
+        
+        return True
+        
 
     @Post(__TOKEN_PATH__, headers =
          {
             TplusOpenApiProfile.__APP_KEY__: __APP_KEY__,
             TplusOpenApiProfile.__APP_SECRET__: __APP_SECRET__,
+            "Content-Type": "application/json"
          })
     def exchange_app_token(self, response: HttpResponseParser):
-        pass
+        return True

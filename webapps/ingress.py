@@ -1,3 +1,4 @@
+
 from flask import Flask, request
 from webapps.actors.tplus.auth.appticketactor import AppTicketActor
 from webapps.model.properties.dao.actorenvironment import ActorsEnvironment
@@ -40,17 +41,15 @@ async def hello():
 async def ep_tplus_auth_apptoken():
     __timber.info("/endpoints/tplus/auth/appToken")
 
-    __timber.info(request.json)
+    __timber.info(request.data)
 
-    promise = PromisePool().make_the_promise("actors_channel", "/endpoints/tplus/auth/appTicket", 
+    promise = PromisePool().make_the_promise("tplus_actors_channel", "/endpoints/tplus/auth/appTicket", 
                                              "webapps.endpoints.tplus.auth.appticket.AppTicket")
-    
-    actor = AppTicketActor()
-    result = actor.decrypt_push_message(request.json)
-    token = AppTicket(result)
 
-    promise.resovle(token)
+    # ticket = AppTicketActor().resolve_ticket(request.text)
+    promise.resolve(0)
 
     return AppTicketActor.success()
+
 
 

@@ -3,7 +3,8 @@ class HttpHeaders(object):
 
     __CHARSET__ = "Accept-Charset"
 
-    def __init__(self, defaults = {__CHARSET__: "utf-8, iso-8859-1; q=1"}) -> None:
+    def __init__(self, defaults = {}) -> None:
+    # def __init__(self, defaults = {__CHARSET__: "utf-8, iso-8859-1; q=1"}) -> None:
         self._header_vault = dict()
 
         self.header_vault |= defaults
