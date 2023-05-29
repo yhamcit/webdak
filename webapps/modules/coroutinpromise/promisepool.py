@@ -1,11 +1,15 @@
 
-from types import GeneratorType
-from typing import Awaitable
+from collections import namedtuple
+
 from webapps.language.decorators.singleton import singleton
 from webapps.language.errors.enverror import ConfigContentError
 
-from webapps.language.errors.promiseerror import PromisePoolOccupied
+from webapps.language.errors.promiseerror import PromiseIdentifierSame, PromisePoolOccupied
 from webapps.modules.coroutinpromise.promise import Promise
+from webapps.modules.coroutinpromise.promiseidentifier import PromiseIdentifier
+
+
+
 
 
 
@@ -14,29 +18,16 @@ class PromisePool(object):
 
     def __init__(self, channel_list: tuple) -> None:
         self._channels = dict(((name, dict()) for name in channel_list))
-        self._waitings = dict()
-        self._wrapped_coroutine = lambda : None
+        self._registry = dict()
 
-    def __await__(self) -> Awaitable:
-        return self
-    
-    __iter__ = __await__
-
-    def __next__(self):
-
-        if SomeConditionMatched:
-            raise StopIteration("Coroutine suspended.")
-        
-        return self.coroutine.send()
-    
     @property
     def channels(self) :
         return self._channels
-    
+
     @property
-    def waitings(self) :
-        return self._waitings
-    
+    def registry(self) :
+        return self._registry
+
     @property
     def coroutine(self) :
         return self._wrapped_coroutine
@@ -45,47 +36,69 @@ class PromisePool(object):
     def coroutine(self, coro_func) :
         self._wrapped_coroutine = coro_func
     
-    def set_promise(self, promise, channel: str, name: str, identifier: str):
+    def set_promise(self, promise, identifier: PromiseIdentifier):
         try:
-            ch = self.channels[channel]
-            ch[name] = promise
+            channel = self.channels[identifier.channel]
+            channel[identifier.name] = promise
+
+            self.registry[identifier.id] = promise
         except BaseException as error:
             raise error
     
-    def set_waitings(self, identifier: str, waiting: GeneratorType):
-        try:
-            self.waitings[identifier] = waiting
-        except BaseException as error:
-            raise error
+    def require_promise(self, identifier: PromiseIdentifier):
 
-    def require_promise(self, channel: str, name: str, identifier: str):
+        if identifier.channel not in self.channels:
+            raise ConfigContentError("No channel named: {} found in configuration file.".format(identifier.channel))
+        
+        local_promise = self.registry[identifier.id]
+        local_promise.done = True
 
-        if channel not in self.channels:
-            raise ConfigContentError("No channel named: {} found in configuration file.".format(channel))
-
-        promise = Promise(identifier)
-        self.set_promise(promise, channel, name, identifier)
+        promise = Promise(identifier, local_promise.corofunc, identifier)
+        self.set_promise(promise, identifier)
 
         return promise
 
-    def make_the_promise(self, channel: str, name: str, identifier: str):
-        channel = self.channels[channel]
-        promise = Promise()
-
+    def make_the_promise(self, identifier: PromiseIdentifier):
         try:
-            followee_promise = channel[name]
-            followee_promise.resolve(promise)
-        except StopIteration as done:
-            return promise
-        else:
-            # TODO: what exception
-            raise Exception()
+            promise = self.channels[identifier.channel].pop(identifier.name)
+        except KeyError as error:
+            # __timber.critial()
+            pass
+
+        if identifier.id in self.registry:
+            raise PromiseIdentifierSame()
+        
+        self.registry[identifier.id] = promise
 
         return promise
-    
+     
     @staticmethod
-    def the_promise(channel: str, name: str, id: str):
+    def for_promise(corofunc, identifier: PromiseIdentifier):
+        return PromisePool().require_promise(corofunc, identifier)
+    
 
-        PromisePool().require_promise(channel, name, id)
+    @staticmethod
+    def require(identifier: PromiseIdentifier):
 
-        return PromiseSolver()
+        def decorator(func):
+
+            async def decroration(*args, **kwargs) :
+
+                await PromisePool.for_promise(func(), identifier)
+            
+            return decroration
+        
+        return decorator
+
+    @staticmethod
+    def deliver(identifier: PromiseIdentifier):
+
+        def decorator(func):
+
+            async def decroration(*args, **kwargs) :
+
+                await PromisePool.for_promise(func(), identifier)
+            
+            return decroration
+        
+        return decorator

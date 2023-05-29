@@ -2,8 +2,8 @@
 
 from webapps.model.properties.environments import Evironments
 from webapps.model.properties.dao.promisepoolenvironment import PromisePoolEnvironment
+from webapps.modules.coroutinpromise.promisepool import PromisePool
 
-from webapps.modules.asyncoroutine.promisepool import PromisePool
 
 class SystemInitiator(object):
 

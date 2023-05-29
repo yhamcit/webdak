@@ -6,10 +6,10 @@ from Crypto.Cipher import AES
 import httpx
 
 from webapps.endpoints.tplus.auth.appticket import AppTicket
-from webapps.language.errors.tpluserror import AppTicketExpired
+from webapps.model.actors.tplusappticketrepo import TplusAppTicketRepo
 from webapps.model.properties.dao.actorenvironment import ActorsEnvironment
 from webapps.model.properties.dao.tplusprofile import TplusOpenApiProfile
-from webapps.modules.asyncoroutine.promisepool import PromisePool
+
 from webapps.modules.lumber.lumber import Lumber
 from webapps.modules.requests.httpcallrequests import HttpCallRequests
 from webapps.modules.requests.httpcall import HttpCall
@@ -26,7 +26,7 @@ __timber = Lumber.timber("actors")
 @singleton
 class AppTicketActor(object):
 
-    __SUCCEED__ = {"result": "success"}
+    __SUCCESS__ = {"result": "success"}
 
     __FAILURE__ = {"result": "failed"}
 
@@ -35,47 +35,43 @@ class AppTicketActor(object):
                             ActorsEnvironment.make_identifier(__module__, "AppTicketActor"))
 
     def __init__(self, actor_profile) -> None:
-        self._app_ticket_repo = None
+        self._app_ticket_repo = TplusAppTicketRepo()
         self._actor_profile = actor_profile
         self._http_call_builder = HttpCallRequests() \
                                     .set_base_url(self.actor_profile.base_url) \
                                     .make_builder()
         
-    async def exchange_app_token(self):
-        http_call = self.http_call_builder.build(TplusHttpCall)
-        try:
-            return await http_call.exchange_app_token(self.app_ticket)
-        except AppTicketExpired as error:
-            return await self.renew_app_token()
-
     async def renew_app_token(self):
+        __timber = Lumber.timber("renew_app_token")
+
         http_call = self.http_call_builder.build(TplusHttpCall)
         
-        # result = await http_call.refresh_app_ticket()
+        result = await http_call.refresh_app_ticket()
 
-        # if result:
-        #     return "OK!"
+        if result:
+            return "OK!"
 
-        the_promise = await PromisePool().the_promise("tplus_actors_channel", "/endpoints/tplus/auth/appTicket", 
-                                             "webapps.endpoints.tplus.auth.appticket.AppTicket")
-
-        ticket = await the_promise
+    async def exchange_app_ticket(self):
+        __timber = Lumber.timber("exchange_app_ticket")
+        http_call = self.http_call_builder.build(TplusHttpCall)
 
         certificate = AppTicketActor.__ACTOR_PROFILE__.app_token_certifcate
 
         json_params = {
-            TplusOpenApiProfile.__APP_TICKET__: ticket.app_ticket, 
+            TplusOpenApiProfile.__APP_TICKET__: self.app_ticket, 
             TplusOpenApiProfile.__CERTIFICATE__: certificate
         }
 
         return await http_call.exchange_app_token(json = json_params)
 
     @staticmethod
-    def succeed():
-        return json.dumps(AppTicketActor.__SUCCEED__)
+    def success():
+        __timber = Lumber.timber("staticmethod.success()")
+        return json.dumps(AppTicketActor.__SUCCESS__)
 
     @staticmethod
     def failure():
+        __timber = Lumber.timber("staticmethod.failure()")
         return json.dumps(AppTicketActor.__FAILURE__)
 
     @property
@@ -88,11 +84,11 @@ class AppTicketActor(object):
 
     @property
     def app_ticket(self):
-        return self._app_ticket_repo.app_ticket
+        return self._app_ticket_repo.ticket
 
     @app_ticket.setter
     def app_ticket(self, app_ticket):
-        self._app_ticket_repo.app_ticket = app_ticket
+        self._app_ticket_repo.ticket = app_ticket
 
     @property
     def http_call_builder(self):

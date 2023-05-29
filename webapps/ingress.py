@@ -1,12 +1,14 @@
 
 from flask import Flask, request
 from webapps.actors.tplus.auth.appticketactor import AppTicketActor
+from webapps.language.errors.tpluserror import AppTicketExpired, AppTicketNotAvialable
 from webapps.model.properties.dao.actorenvironment import ActorsEnvironment
 
 from webapps.model.properties.preference import Preference
 
 from webapps.endpoints.tplus.auth.appticket import AppTicket
-from webapps.modules.asyncoroutine.promisepool import PromisePool
+from webapps.modules.coroutinpromise.promisepool import PromisePool
+from webapps.modules.coroutinpromise.promisepool import PromiseIdentifier
 
 from webapps.modules.lumber.lumber import Lumber
 
@@ -18,18 +20,27 @@ app = Flask(__name__)
 
 
 
-@app.route("/actors/tplus/auth/appToken", methods=["GET", "POST"])
+app_tocken_actr_promise = PromiseIdentifier("tplus_actors_channel", "tplust_authen", "/actors/tplus/auth/appToken")
+@PromisePool.require(app_tocken_actr_promise)
+@app.route(app_tocken_actr_promise.id, methods=["GET", "POST"])
 async def actor_tplus_app_token():
-    __timber.info("/actors/tplus/auth/appToken")
+    __timber.info(app_tocken_actr_promise.id)
 
-    if request.method == "POST":
-        app_ticket = await AppTicketActor().renew_app_token()
-    elif request.method == "GET":
-        app_ticket = await AppTicketActor().exchange_app_token()
-    else:
-        return "rejected"
+    if request.method == "GET":
+        try:
+            app_token = await AppTicketActor().exchange_app_ticket()
+
+            return app_token
+        except AppTicketNotAvialable or AppTicketExpired as error:
+            pass
+
+    await AppTicketActor().renew_app_token()
+
+    await PromisePool.for_promise(app_tocken_actr_promise.id, None)
+
+    app_token = await AppTicketActor().exchange_app_ticket()
     
-    return app_ticket
+    return app_token
 
 
 @app.route("/endpoints/healthz")
@@ -37,17 +48,18 @@ async def hello():
     __timber.info("/endpoints/tplus/auth/appToken")
     return "ok!"
 
-@app.route("/endpoints/tplus/auth/appTicket", methods=["POST"])
-async def ep_tplus_auth_apptoken():
-    __timber.info("/endpoints/tplus/auth/appToken")
 
+app_ticket_ep_promise = PromiseIdentifier("tplus_actors_channel", "tplust_authen", "/endpoints/tplus/auth/appTicket")
+@PromisePool.deliver(app_ticket_ep_promise)
+@app.route(app_ticket_ep_promise.id, methods=["POST"])
+async def ep_tplus_auth_apptoken():
+    __timber.info(app_ticket_ep_promise.id)
     __timber.info(request.data)
 
-    promise = PromisePool().make_the_promise("tplus_actors_channel", "/endpoints/tplus/auth/appTicket", 
-                                             "webapps.endpoints.tplus.auth.appticket.AppTicket")
+    app_ticket = AppTicketActor().resolve_ticket(request.text)
+    promise = PromisePool.make_the_promise(app_ticket_ep_promise.id)
+    promise.resolve(app_ticket)
 
-    # ticket = AppTicketActor().resolve_ticket(request.text)
-    promise.resolve(0)
 
     return AppTicketActor.success()
 

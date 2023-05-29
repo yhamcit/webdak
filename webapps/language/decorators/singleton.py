@@ -22,7 +22,7 @@ class singleton(type):
         #     self.__setattr__(attr, self._cls.__dict__[attr])
 
     def __new__(self, cls):
-        creature = super().__new__(self, self.__name__, (cls,), {"__call__": singleton.__call__})
+        creature = super().__new__(self, cls.__name__, (cls,), {"__call__": singleton.__call__})
         return creature
         
     def __call__(self, *args, group_name = __module__, **kwargs) -> Any:

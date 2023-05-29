@@ -9,7 +9,6 @@ from urllib.parse import urljoin
 from urllib.parse import quote
 from urllib.parse import SplitResult
 
-from webapps.modules.asyncoroutine.promisepool import PromisePool
 
 from webapps.language.errors.httperror import HttpUrlNotValid
 from webapps.modules.lumber.lumber import Lumber

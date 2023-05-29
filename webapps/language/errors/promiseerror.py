@@ -4,3 +4,6 @@ class PromiseException(Exception):
 
 class PromisePoolOccupied(PromiseException):
     pass
+
+class PromiseIdentifierSame(PromiseException):
+    pass

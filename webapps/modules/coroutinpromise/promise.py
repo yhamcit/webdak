@@ -5,6 +5,9 @@
 
 from typing import Coroutine, Generator
 
+from webapps.modules.coroutinpromise.promiseidentifier import PromiseIdentifier
+
+
 
 class Promise(object):
     """
@@ -28,21 +31,26 @@ class Promise(object):
         coro_A :
             <continues>
     """
-    def __init__(self, identifier: str, coroutine: Coroutine) -> None:
+    def __init__(self, corofunc: Coroutine, identifier: PromiseIdentifier) -> None:
+        self._corofunc = corofunc
+        self._done = False
         self._indentifier = identifier
-        self._await_like = coroutine
-        self._coro_switcher = None
-        self._done_value = None
 
     def __await__(self):
+        self.corofunc = self.corofunc()
         return self
     
     def __next__(self):
-        self._then_value = yield
-        return self._coro_switcher
+        self.corofunc.send(None)
     
-    def __anext__ (self):
+    async def __anext__ (self):
         pass
+
+    async def __aenter__(self):
+        await print("IO operations")
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await print("IO operations")
 
     __iter__ = __await__
 
@@ -57,23 +65,43 @@ class Promise(object):
 
     def athrow(self, error):
         pass
-    
-    def delivery(self):
-        self.coro_switcher = self.coro_switcher()
-        self.coro_switcher.send(None)
 
-    def coro_switcher(self):
-        yield
-        self.resolve(self._await_like)
+    def corofunc(self):
+        while self.done is not True:
+            yield
+
+    @property 
+    def done(self) -> bool:
+        return self._done
+
+    @done.setter
+    def done(self, done: bool):
+        self._done = done
 
     @property 
     def identifier(self) -> str:
         return self._identifier
 
+    @identifier.setter
+    def identifier(self, identifier: str):
+        self._identifier = identifier
+
     @property
-    def coro_switcher(self):
-        return self._coro_switcher
+    def corofunc(self):
+        return self._corofunc
     
-    @coro_switcher.setter
-    def coro_switcher(self, switcher: Generator):
-        self._coro_switcher = switcher
+    @corofunc.setter
+    def corofunc(self, corofunc: Generator):
+        self._corofunc = corofunc
+
+    def resolve(self, value):
+        try:
+            return self.corofunc.send(value)
+        except StopIteration as done:
+            # __timber
+            pass
+        else:
+            self.fullfill()
+
+    def fullfill(self) -> None:
+        pass
