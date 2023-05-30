@@ -2,7 +2,10 @@
 import json
 import base64
 
+from Crypto.Util.Padding import unpad
 from Crypto.Cipher import AES
+
+
 import httpx
 
 from webapps.endpoints.tplus.auth.appticket import AppTicket
@@ -20,15 +23,17 @@ from webapps.modules.requests.httpmethods import Post
 from webapps.modules.requests.httpresponse import HttpResponseParser
 
 
-__timber = Lumber.timber("actors")
 
 
 @singleton
 class AppTicketActor(object):
+    __timber = Lumber.timber("actors")
 
     __SUCCESS__ = {"result": "success"}
 
     __FAILURE__ = {"result": "failed"}
+    
+    __ENCRYPT_MSG__ = "encryptMsg"
 
     __ACTOR_PROFILE__ = ActorsEnvironment() \
                         .get_actor_profile(
@@ -42,7 +47,7 @@ class AppTicketActor(object):
                                     .make_builder()
         
     async def renew_app_token(self):
-        __timber = Lumber.timber("renew_app_token")
+        AppTicketActor.__timber.info("renew_app_token")
 
         http_call = self.http_call_builder.build(TplusHttpCall)
         
@@ -52,7 +57,8 @@ class AppTicketActor(object):
             return "OK!"
 
     async def exchange_app_ticket(self):
-        __timber = Lumber.timber("exchange_app_ticket")
+        AppTicketActor.__timber.info("exchange_app_ticket")
+
         http_call = self.http_call_builder.build(TplusHttpCall)
 
         certificate = AppTicketActor.__ACTOR_PROFILE__.app_token_certifcate
@@ -104,14 +110,14 @@ class AppTicketActor(object):
 
         return AppTicket(infomation)
 
-    def decrypt_push_message(self, content) -> str:
+    def decrypt_push_message(self, content) -> dict:
 
         decrypt_key = self.actor_profile.cipher_key.encode("utf8")
         cipher = AES.new(decrypt_key, AES.MODE_ECB)
 
-        ciphertext = content[TplusOpenApiProfile.__ENCRYPT_MSG__]
+        ciphertext = content[AppTicketActor.__ENCRYPT_MSG__]
         cipherbytes = bytes(ciphertext, encoding='utf8')
-        raw_text = cipher.decrypt(base64.decodebytes(cipherbytes))
+        raw_text = unpad(cipher.decrypt(base64.decodebytes(cipherbytes)), 16)
         infomation = raw_text.decode("utf8")
 
         return json.loads(infomation)

@@ -17,12 +17,12 @@ from webapps.modules.requests.httpheaders import HttpHeaders
 from webapps.modules.requests.httpsession import HttpSession
 
 
-__timber = Lumber.timber("webdak")
 
 
 
 class HttpMethods(object):
     
+    __timber = Lumber.timber("webdak")
     def __init__(self, api_path: str = "", headers: dict = {}, cookies = (), auth = None) -> None:
         self._api_path = api_path
         self._headers = headers
@@ -135,13 +135,11 @@ class Post(HttpMethods):
                     response = await client.post(url_encoded, params = params, 
                                                 headers = headers, cookies = session.cookies,
                                                 **kwargs)
-                    # __timber.error(response)
+       
+                    session.draw_cookie_update(response)
+                    return func(http_call, response)
                 except BaseException as error:
-                    # __timber.error(error)
+                    HttpMethods.__timber.error(error)
                     raise(error)
-            
-                session.draw_cookie_update(response)
-
-            return func(http_call, response)
 
         return wrapper

@@ -21,8 +21,8 @@ app = Flask(__name__)
 
 
 app_tocken_actr_promise = PromiseIdentifier("tplus_actors_channel", "tplust_authen", "/actors/tplus/auth/appToken")
-@PromisePool.require(app_tocken_actr_promise)
 @app.route(app_tocken_actr_promise.id, methods=["GET", "POST"])
+# @PromisePool.require(app_tocken_actr_promise)
 async def actor_tplus_app_token():
     __timber.info(app_tocken_actr_promise.id)
 
@@ -36,7 +36,11 @@ async def actor_tplus_app_token():
 
     await AppTicketActor().renew_app_token()
 
-    await PromisePool.for_promise(app_tocken_actr_promise.id, None)
+    # await PromisePool.for_promise(app_tocken_actr_promise, None)
+
+    async for app_ticket
+
+    __timber = Lumber.timber("root")
 
     app_token = await AppTicketActor().exchange_app_ticket()
     
@@ -50,16 +54,17 @@ async def hello():
 
 
 app_ticket_ep_promise = PromiseIdentifier("tplus_actors_channel", "tplust_authen", "/endpoints/tplus/auth/appTicket")
-@PromisePool.deliver(app_ticket_ep_promise)
 @app.route(app_ticket_ep_promise.id, methods=["POST"])
+# @PromisePool.deliver(app_ticket_ep_promise)
 async def ep_tplus_auth_apptoken():
     __timber.info(app_ticket_ep_promise.id)
     __timber.info(request.data)
 
-    app_ticket = AppTicketActor().resolve_ticket(request.text)
-    promise = PromisePool.make_the_promise(app_ticket_ep_promise.id)
-    promise.resolve(app_ticket)
+    app_ticket = AppTicketActor().resolve_ticket(request.json)
 
+    promise = PromisePool.deliver(app_ticket_ep_promise)
+    if promise is not None:
+        promise.set_result(app_ticket)
 
     return AppTicketActor.success()
 
