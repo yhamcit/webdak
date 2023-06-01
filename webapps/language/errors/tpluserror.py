@@ -8,3 +8,12 @@ class AppTicketNotAvialable(TplusException):
 
 class AppTicketExpired(TplusException):
     pass
+
+class AppTokenExpired(TplusException):
+    pass
+
+class AppTicketRequestReject(TplusException):
+    pass
+
+class AppTicketRejectedByServer(TplusException):
+    pass

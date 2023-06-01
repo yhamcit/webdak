@@ -9,6 +9,8 @@ from Crypto.Cipher import AES
 import httpx
 
 from webapps.endpoints.tplus.auth.appticket import AppTicket
+from webapps.endpoints.tplus.auth.apptoken import AppToken
+from webapps.language.errors.tpluserror import AppTicketRejectedByServer, AppTicketRequestReject
 from webapps.model.actors.tplusappticketrepo import TplusAppTicketRepo
 from webapps.model.properties.dao.actorenvironment import ActorsEnvironment
 from webapps.model.properties.dao.tplusprofile import TplusOpenApiProfile
@@ -56,15 +58,17 @@ class AppTicketActor(object):
         if result:
             return "OK!"
 
-    async def exchange_app_ticket(self):
+    async def exchange_app_ticket(self, app_ticket: AppTicket = None):
         AppTicketActor.__timber.info("exchange_app_ticket")
 
         http_call = self.http_call_builder.build(TplusHttpCall)
 
         certificate = AppTicketActor.__ACTOR_PROFILE__.app_token_certifcate
 
+        ticket = self.app_ticket.ticket if app_ticket is None else app_ticket.ticket
+
         json_params = {
-            TplusOpenApiProfile.__APP_TICKET__: self.app_ticket, 
+            TplusOpenApiProfile.__APP_TICKET__: ticket,
             TplusOpenApiProfile.__CERTIFICATE__: certificate
         }
 
@@ -141,12 +145,12 @@ class TplusHttpCall(HttpCall):
             TplusOpenApiProfile.__APP_KEY__: __APP_KEY__,
             TplusOpenApiProfile.__APP_SECRET__: __APP_SECRET__,
          })
-    def refresh_app_ticket(self, response: HttpResponseParser):
+    def refresh_app_ticket(self, response: httpx.Response) -> str:
 
         if response.status_code != httpx.codes.OK:
-            return False
+            raise AppTicketRequestReject("Server rejected the request, check AppKey\AppSecrect. Doese target company match request?")
         
-        return True
+        return "True"
         
 
     @Post(__TOKEN_PATH__, headers =
@@ -155,5 +159,11 @@ class TplusHttpCall(HttpCall):
             TplusOpenApiProfile.__APP_SECRET__: __APP_SECRET__,
             "Content-Type": "application/json"
          })
-    def exchange_app_token(self, response: HttpResponseParser):
-        return True
+    def exchange_app_token(self, response: httpx.Response):
+        
+        if response.status_code != httpx.codes.OK:
+            raise AppTicketRejectedByServer("App ticket rejected by server. Checked Certificates?")
+        
+        app_token = AppToken(response.json())
+
+        return json.dumps(app_token.values_pack)

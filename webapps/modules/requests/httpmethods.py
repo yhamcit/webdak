@@ -139,7 +139,6 @@ class Post(HttpMethods):
                     session.draw_cookie_update(response)
                     return func(http_call, response)
                 except BaseException as error:
-                    HttpMethods.__timber.error(error)
                     raise(error)
 
         return wrapper
