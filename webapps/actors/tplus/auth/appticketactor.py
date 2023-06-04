@@ -29,7 +29,18 @@ from webapps.modules.requests.httpresponse import HttpResponseParser
 
 @singleton
 class AppTicketActor(object):
-    __timber = Lumber.timber("actors")
+
+    _timber = Lumber.timber("actors")
+
+    _app_id_ = "86816166-240D-46D8-9BDD-CDE315D84DF0"
+
+    _ed25519_key_private_ = """b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACAjyTJVHi3HRj31IDkGhiMKbFjvYh1wNp4/B6amKJJ6BwAAAKAvJ6YULyem
+FAAAAAtzc2gtZWQyNTUxOQAAACAjyTJVHi3HRj31IDkGhiMKbFjvYh1wNp4/B6amKJJ6Bw
+AAAED/sa1axOMwTs3RxE9tKpppSP/aMVSVeGihFjVuB/qGHiPJMlUeLcdGPfUgOQaGIwps
+WO9iHXA2nj8HpqYoknoHAAAAFml0YWRtaW5AVk0tMS0xNy1jZW50b3MBAgMEBQYH"""
+
+    _ed25519_key_public_ = """AAAAC3NzaC1lZDI1NTE5AAAAICPJMlUeLcdGPfUgOQaGIwpsWO9iHXA2nj8HpqYoknoH"""
 
     __SUCCESS__ = {"result": "success"}
 
@@ -49,17 +60,14 @@ class AppTicketActor(object):
                                     .make_builder()
         
     async def renew_app_token(self):
-        AppTicketActor.__timber.info("renew_app_token")
+        AppTicketActor._timber.debug("renew_app_token")
 
         http_call = self.http_call_builder.build(TplusHttpCall)
         
-        result = await http_call.refresh_app_ticket()
-
-        if result:
-            return "OK!"
+        await http_call.refresh_app_ticket()
 
     async def exchange_app_ticket(self, app_ticket: AppTicket = None):
-        AppTicketActor.__timber.info("exchange_app_ticket")
+        AppTicketActor._timber.debug("exchange_app_ticket")
 
         http_call = self.http_call_builder.build(TplusHttpCall)
 
@@ -73,15 +81,55 @@ class AppTicketActor(object):
         }
 
         return await http_call.exchange_app_token(json = json_params)
+    
+    @staticmethod
+    def ed25519_sign_verify():
+        from Crypto.PublicKey import ECC
+        from Crypto.Cipher import PKCS1_OAEP
+        from Crypto.Signature import eddsa
+        from Crypto.Hash import SHA512
+
+        _ed25519_key_private_ = b"""-----BEGIN OPENSSH PRIVATE KEY-----
+        b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+        QyNTUxOQAAACAjyTJVHi3HRj31IDkGhiMKbFjvYh1wNp4/B6amKJJ6BwAAAKAvJ6YULyem
+        FAAAAAtzc2gtZWQyNTUxOQAAACAjyTJVHi3HRj31IDkGhiMKbFjvYh1wNp4/B6amKJJ6Bw
+        AAAED/sa1axOMwTs3RxE9tKpppSP/aMVSVeGihFjVuB/qGHiPJMlUeLcdGPfUgOQaGIwps
+        WO9iHXA2nj8HpqYoknoHAAAAFml0YWRtaW5AVk0tMS0xNy1jZW50b3MBAgMEBQYH
+        -----END OPENSSH PRIVATE KEY-----"""
+
+        _ed25519_key_public_ = b"""ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICPJMlUeLcdGPfUgOQaGIwpsWO9iHXA2nj8HpqYoknoH itadmin@VM-1-17-centos"""
+
+        # key = ECC.generate(curve='Ed25519')
+
+        # with open('tplus','rt') as f:
+        #     pv_key = ECC.import_key(f.read())
+        pv_key = ECC.import_key(_ed25519_key_private_)
+
+        # with open('tplus.pub','rt') as f:
+            # pb_key = ECC.import_key(f.read())
+        pb_key = ECC.import_key(_ed25519_key_public_)
+
+
+
+        message = b'I give my permission to order #4355'
+        prehashed_message = SHA512.new(message)
+        signer = eddsa.new(pv_key, 'rfc8032')
+        signature = signer.sign(prehashed_message)
+
+        verifier = eddsa.new(pb_key, 'rfc8032')
+        try:
+            verifier.verify(prehashed_message, signature)
+            print("The message is authentic")
+        except ValueError:
+            print("The message is not authentic")
+
 
     @staticmethod
     def success():
-        __timber = Lumber.timber("staticmethod.success()")
         return json.dumps(AppTicketActor.__SUCCESS__)
 
     @staticmethod
     def failure():
-        __timber = Lumber.timber("staticmethod.failure()")
         return json.dumps(AppTicketActor.__FAILURE__)
 
     @property
@@ -109,8 +157,8 @@ class AppTicketActor(object):
         self._http_call_builder = http_call_builder
 
     def resolve_ticket(self, content: str):
-        # TODO: exception
         infomation = self.decrypt_push_message(content)
+        AppTicketActor._timber.debug("decrypt ticket: {infomation}")
 
         return AppTicket(infomation)
 
@@ -146,11 +194,12 @@ class TplusHttpCall(HttpCall):
             TplusOpenApiProfile.__APP_SECRET__: __APP_SECRET__,
          })
     def refresh_app_ticket(self, response: httpx.Response) -> str:
+        AppTicketActor._timber.debug("TplusHttpCall.refresh_app_ticket()")
 
         if response.status_code != httpx.codes.OK:
             raise AppTicketRequestReject("Server rejected the request, check AppKey\AppSecrect. Doese target company match request?")
         
-        return "True"
+        return AppTicketActor.success()
         
 
     @Post(__TOKEN_PATH__, headers =
@@ -160,6 +209,7 @@ class TplusHttpCall(HttpCall):
             "Content-Type": "application/json"
          })
     def exchange_app_token(self, response: httpx.Response):
+        AppTicketActor._timber.debug("TplusHttpCall.exchange_app_token()")
         
         if response.status_code != httpx.codes.OK:
             raise AppTicketRejectedByServer("App ticket rejected by server. Checked Certificates?")

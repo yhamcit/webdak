@@ -56,30 +56,6 @@ class PromisePool(object):
         except BaseException as error:
             raise error
         
-    def aaaaa(self, corofunc: Coroutine, identifier: PromiseIdentifier, value: Any):
-        if not self.has_channel(identifier):
-            raise ConfigContentError("No channel named: {} found in configuration file.".format(identifier.channel))
-        
-        channel = self.get_channel(identifier)
-        if identifier.name in channel:
-            raise PromisePoolOccupied()
-
-        self.set_promise(corofunc, identifier)
-    
-    def bbb(self, identifier: PromiseIdentifier):
-        try:
-            corofunc = self.channels[identifier.channel].pop(identifier.name)
-
-            if identifier.id in self.registry:
-                raise PromiseIdentifierSame()
-            
-            self.registry[identifier.id] = corofunc
-
-            return corofunc
-        except KeyError as error:
-            PromisePool.__timber.critial(f"Promise not found: {identifier.name}")
-            return None
-        
     def the_promise(self, identifier: PromiseIdentifier, value: Any):
         if not self.has_channel(identifier):
             raise ConfigContentError("No channel named: {} found in configuration file.".format(identifier.channel))
