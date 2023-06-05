@@ -22,7 +22,7 @@ __timber = Lumber.timber("root")
 __timber.info("Webapp enter running status.")
 
 
-app_tocken_actr_promise = PromiseIdentifier("tplus_actors_channel", "tplust_authen", "/actors/tplus/auth/appToken")
+app_tocken_actr_promise = PromiseIdentifier("tplus_actors_channel", "tplus_authen", "/actors/tplus/auth/appToken")
 @app.route(app_tocken_actr_promise.id, methods=["GET", "POST"])
 # @PromisePool.require(app_tocken_actr_promise)
 async def actor_tplus_app_token():
@@ -47,11 +47,11 @@ async def actor_tplus_app_token():
 
 @app.route("/endpoints/healthz")
 async def hello():
-    __timber.info("/endpoints/tplus/auth/appToken")
+    __timber.info("/endpoints/healthz")
     return AppTicketActor.success()
 
 
-app_ticket_ep_promise = PromiseIdentifier("tplus_actors_channel", "tplust_authen", "/endpoints/tplus/auth/appTicket")
+app_ticket_ep_promise = PromiseIdentifier("tplus_actors_channel", "tplus_authen", "/endpoints/tplus/auth/appTicket")
 @app.route(app_ticket_ep_promise.id, methods=["POST"])
 # @PromisePool.deliver(app_ticket_ep_promise)
 async def ep_tplus_auth_apptoken():
@@ -62,9 +62,7 @@ async def ep_tplus_auth_apptoken():
 
     app_ticket = AppTicketActor().resolve_ticket(content)
 
-    promise = PromisePool.deliver(app_ticket_ep_promise)
-    if promise is not None:
-        promise.set_result(app_ticket)
+    PromisePool.deliver(app_ticket_ep_promise, app_ticket)
 
     return AppTicketActor.success()
 

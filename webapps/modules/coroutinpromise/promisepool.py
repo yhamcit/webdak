@@ -19,11 +19,10 @@ from webapps.modules.lumber.lumber import Lumber
 @singleton
 class PromisePool(object):
 
-    __timber = Lumber.timber("webdak")
+    _timber = Lumber.timber("webdak")
 
     def __init__(self, channel_list: tuple) -> None:
         self._channels = dict(((name, dict()) for name in channel_list))
-        self._registry = dict()
 
     @property
     def channels(self) :
@@ -44,43 +43,40 @@ class PromisePool(object):
     def has_channel(self, identifier: PromiseIdentifier) -> bool:
         return identifier.channel in self.channels
 
+    def occupied(self, identifier: PromiseIdentifier) -> bool:
+        return identifier.name in self.channels[identifier.channel]
+
     def get_channel(self, identifier: PromiseIdentifier) -> dict:
         return self.channels[identifier.channel]
     
-    def set_promise(self, promise: Promise, identifier: PromiseIdentifier) -> None:
-        try:
-            channel = self.channels[identifier.channel]
-            channel[identifier.name] = promise
-
-            self.registry[identifier.id] = promise
-        except BaseException as error:
-            raise error
-        
     def the_promise(self, identifier: PromiseIdentifier, value: Any):
         if not self.has_channel(identifier):
-            raise ConfigContentError("No channel named: {} found in configuration file.".format(identifier.channel))
+            raise ConfigContentError(f"No channel named: {identifier.channel} found in configuration file.")
         
-        channel = self.get_channel(identifier)
-        if identifier.name in channel:
+        if self.occupied(identifier):
             raise PromisePoolOccupied()
 
-        promise = Promise(identifier)
-        self.set_promise(promise, identifier)
+        try:
+            promise = Promise(identifier)
+            channel = self.channels[identifier.channel]
+            channel[identifier.name] = promise
+            PromisePool._timber.critical(f"PromisePools {self}")
+            PromisePool._timber.critical(f"channels: {self.channels}, Promises: {self.channels[identifier.channel]}")
 
-        return promise
+            return promise
+        except Exception as error:
+            PromisePool._timber.critical(f"error: {error}")
+            raise error
     
     def make_promise(self, identifier: PromiseIdentifier):
         try:
             promise = self.channels[identifier.channel].pop(identifier.name)
 
-            if identifier.id in self.registry:
-                raise PromiseIdentifierSame()
-            
-            self.registry[identifier.id] = promise
-
             return promise
         except KeyError as error:
-            PromisePool.__timber.critial(f"Promise not found: {identifier.name}")
+            PromisePool._timber.critical(f"PromisePools {self}")
+            PromisePool._timber.critical(f"channels: {self.channels}, Promises: {self.channels[identifier.channel]}")
+            PromisePool._timber.critical(f"Promise not found: {identifier.name}")
             return None
 
      
@@ -90,62 +86,11 @@ class PromisePool(object):
         return PromisePool().the_promise(identifier, value)
      
     @staticmethod
-    def deliver(identifier: PromiseIdentifier):
+    def deliver(identifier: PromiseIdentifier, value: Any):
 
-        return PromisePool().make_promise(identifier)
-     
-    # @staticmethod
-    # def require(identifier: PromiseIdentifier):
+        promise = PromisePool().make_promise(identifier)
 
-    #     def decorator(func):
+        if promise is not None:
+            promise.set_result(value)
 
-    #         @wraps(func)
-    #         async def decroration(*args, **kwargs) :
-    #             PromisePool.__timber.error(f"{identifier.channel}: {identifier.name} @ {identifier.id}")
-
-    #             await func()
-            
-    #         return decroration
-        
-    #     return decorator
-
-    # @staticmethod
-    # def deliver(identifier: PromiseIdentifier):
-
-    #     def decorator(func):
-
-    #         @wraps(func)
-    #         async def decroration(*args, **kwargs) :
-    #             PromisePool.__timber.error(f"{identifier.channel}: {identifier.name} @ {identifier.id}")
-
-    #             await func()
-            
-    #         return decroration
-        
-    #     return decorator
-
-    @staticmethod
-    def BBBB(identifier: PromiseIdentifier):
-
-
-
-        return PromisePool().bbb(identifier)
-
-    @staticmethod
-    def Promise(identifier: PromiseIdentifier):
-
-        def decorator(func):
-
-            @wraps(func)
-            async def decroration(*args, **kwargs) :
-                PromisePool.__timber.error(f"{identifier.channel}: {identifier.name} @ {identifier.id}")
-
-                corofunc = func()
-
-                PromisePool.aaa(corofunc, identifier)
-
-                await corofunc
-            
-            return decroration
-        
-        return decorator
+        return promise

@@ -34,14 +34,6 @@ class AppTicketActor(object):
 
     _app_id_ = "86816166-240D-46D8-9BDD-CDE315D84DF0"
 
-    _ed25519_key_private_ = """b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-QyNTUxOQAAACAjyTJVHi3HRj31IDkGhiMKbFjvYh1wNp4/B6amKJJ6BwAAAKAvJ6YULyem
-FAAAAAtzc2gtZWQyNTUxOQAAACAjyTJVHi3HRj31IDkGhiMKbFjvYh1wNp4/B6amKJJ6Bw
-AAAED/sa1axOMwTs3RxE9tKpppSP/aMVSVeGihFjVuB/qGHiPJMlUeLcdGPfUgOQaGIwps
-WO9iHXA2nj8HpqYoknoHAAAAFml0YWRtaW5AVk0tMS0xNy1jZW50b3MBAgMEBQYH"""
-
-    _ed25519_key_public_ = """AAAAC3NzaC1lZDI1NTE5AAAAICPJMlUeLcdGPfUgOQaGIwpsWO9iHXA2nj8HpqYoknoH"""
-
     __SUCCESS__ = {"result": "success"}
 
     __FAILURE__ = {"result": "failed"}
@@ -85,7 +77,6 @@ WO9iHXA2nj8HpqYoknoHAAAAFml0YWRtaW5AVk0tMS0xNy1jZW50b3MBAgMEBQYH"""
     @staticmethod
     def ed25519_sign_verify():
         from Crypto.PublicKey import ECC
-        from Crypto.Cipher import PKCS1_OAEP
         from Crypto.Signature import eddsa
         from Crypto.Hash import SHA512
 
@@ -96,6 +87,10 @@ WO9iHXA2nj8HpqYoknoHAAAAFml0YWRtaW5AVk0tMS0xNy1jZW50b3MBAgMEBQYH"""
         AAAED/sa1axOMwTs3RxE9tKpppSP/aMVSVeGihFjVuB/qGHiPJMlUeLcdGPfUgOQaGIwps
         WO9iHXA2nj8HpqYoknoHAAAAFml0YWRtaW5AVk0tMS0xNy1jZW50b3MBAgMEBQYH
         -----END OPENSSH PRIVATE KEY-----"""
+
+        _app_id_ = "86816166-240D-46D8-9BDD-CDE315D84DF0"
+        _app_secret_ = "2E32AE814FFFA39B9915FED26E44B430"
+
 
         _ed25519_key_public_ = b"""ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICPJMlUeLcdGPfUgOQaGIwpsWO9iHXA2nj8HpqYoknoH itadmin@VM-1-17-centos"""
 
@@ -108,7 +103,6 @@ WO9iHXA2nj8HpqYoknoHAAAAFml0YWRtaW5AVk0tMS0xNy1jZW50b3MBAgMEBQYH"""
         # with open('tplus.pub','rt') as f:
             # pb_key = ECC.import_key(f.read())
         pb_key = ECC.import_key(_ed25519_key_public_)
-
 
 
         message = b'I give my permission to order #4355'
