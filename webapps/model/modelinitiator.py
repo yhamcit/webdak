@@ -1,5 +1,4 @@
 
-from sqlalchemy import create_engine
 
 from webapps.language.decorators.singleton import singleton
 from webapps.model.properties.environments import Evironments
@@ -7,7 +6,7 @@ from webapps.model.connectors.dbconnectorfactory import DatabaseConnectorFactory
 from webapps.model.connectors.redisconnectorfactory import RedisConnectorFactory
 from webapps.model.properties.dao.databaseenvironment import DatabaseEnvironment
 from webapps.model.properties.dao.redisenvironment import RedisEnvironment
-from webapps.model.properties.dao.actorenvironment import ActorsEnvironment
+from webapps.model.properties.dao.actorenvironment import actuatorsEnvironment
 from webapps.model.properties.dao.lumberenvironment import LumberEnvironment
 from webapps.modules.lumber.lumber import Lumber
 
@@ -22,8 +21,8 @@ class ModelInitiator(object):
         self._db_env_vault.environment = self._app_env.database
         self._redis_env_vault = RedisEnvironment()
         self._redis_env_vault.environment = self._app_env.redis
-        self._actors_env_vault = ActorsEnvironment()
-        self._actors_env_vault.environment = self._app_env.actors
+        self._actuators_env_vault = actuatorsEnvironment()
+        self._actuators_env_vault.environment = self._app_env.actuators
         self._databases = dict()
         self._redis = None
 

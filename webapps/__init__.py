@@ -1,11 +1,6 @@
-# import sys
-# from os.path import abspath
 
 from webapps.modules.lumber.lumber import Lumber
 
-
-# for loc_path in __path__:
-#     sys.path.append(abspath(loc_path))
 
 from webapps.model.modelinitiator import ModelInitiator
 ModelInitiator() \
@@ -22,9 +17,9 @@ SystemInitiator() \
     .init_promise_pool() \
     .boot()
 
-__timber.info("System boot. Initializing actors.")
+__timber.info("System boot. Initializing actuators.")
 
-from webapps.actors.actorinitiator import ActorInitiator
-ActorInitiator() \
-    .init_actors() \
+from webapps.actuators.actorinitiator import ActuatorInitiator
+ActuatorInitiator() \
+    .init_actuators() \
     .boot()

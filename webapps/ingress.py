@@ -1,9 +1,9 @@
 
 from quart import Quart, request
 
-from webapps.actors.tplus.auth.appticketactor import AppTicketActor
+from webapps.actuators.tplus.auth.appticketactor import AppTicketActor
 from webapps.language.errors.tpluserror import AppTicketExpired, AppTicketNotAvialable
-from webapps.model.properties.dao.actorenvironment import ActorsEnvironment
+from webapps.model.properties.dao.actorenvironment import actuatorsEnvironment
 
 from webapps.model.properties.preference import Preference
 
@@ -22,7 +22,7 @@ __timber = Lumber.timber("root")
 __timber.info("Webapp enter running status.")
 
 
-app_tocken_actr_promise = PromiseIdentifier("tplus_actors_channel", "tplus_authen", "/actors/tplus/auth/appToken")
+app_tocken_actr_promise = PromiseIdentifier("tplus_actuators_channel", "tplus_authen", "/actuators/tplus/auth/appToken")
 @app.route(app_tocken_actr_promise.id, methods=["GET", "POST"])
 # @PromisePool.require(app_tocken_actr_promise)
 async def actor_tplus_app_token():
@@ -51,7 +51,7 @@ async def hello():
     return AppTicketActor.success()
 
 
-app_ticket_ep_promise = PromiseIdentifier("tplus_actors_channel", "tplus_authen", "/endpoints/tplus/auth/appTicket")
+app_ticket_ep_promise = PromiseIdentifier("tplus_actuators_channel", "tplus_authen", "/endpoints/tplus/auth/appTicket")
 @app.route(app_ticket_ep_promise.id, methods=["POST"])
 # @PromisePool.deliver(app_ticket_ep_promise)
 async def ep_tplus_auth_apptoken():

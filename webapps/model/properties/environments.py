@@ -5,7 +5,6 @@ import rtoml
 
 from pathlib import Path
 
-from webapps.model.properties.dao.databaseenvironment import DatabaseEnvironment
 from webapps.language.decorators.singleton import singleton
 
 from webapps.language.errors.enverror import ConfigFileError
@@ -19,7 +18,7 @@ class Evironments(object):
     __LOGGING__ = "lumber"
     __REDIS__ = "redis"
     __DATABASE__ = "database"
-    __ACTORS__ = "actors"
+    __actuators__ = "actuators"
 
     def __init__(self) -> None:
         __CONFIG_ENV = "WEBDAK_CONF"
@@ -72,8 +71,8 @@ class Evironments(object):
         return self._configuration[Evironments.__DATABASE__]
 
     @property
-    def actors(self) -> dict:
-        return self._configuration[Evironments.__ACTORS__]
+    def actuators(self) -> dict:
+        return self._configuration[Evironments.__actuators__]
     
     # @database.setter
     # def database(self, db_type: str) -> None:

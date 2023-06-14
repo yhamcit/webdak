@@ -3,21 +3,21 @@ from importlib import import_module
 
 from re import compile
 from re import match
-from webapps.actors.actorgroup import ActorGroup
+from webapps.actuators.actorgroup import ActorGroup
 
 from webapps.model.properties.environments import Evironments
-from webapps.model.properties.dao.actorenvironment import ActorsEnvironment
+from webapps.model.properties.dao.actorenvironment import actuatorsEnvironment
 
 
-class ActorInitiator(object):
+class ActuatorInitiator(object):
 
     __IS_RELATIVE_MODULE_PATTERN__ = compile("^(?:\.+[a-zA-Z0-9_]+)+$")
 
     def __init__(self) -> None:
-        self._actor_env = ActorsEnvironment()
-        self._actor_env.environment = Evironments().actors
+        self._actor_env = actuatorsEnvironment()
+        self._actor_env.environment = Evironments().actuators
 
-    def init_actors(self):
+    def init_actuators(self):
         for base_actor_profile in self._actor_env:
 
             try:

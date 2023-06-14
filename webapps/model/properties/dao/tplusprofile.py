@@ -1,7 +1,7 @@
 
 
 from webapps.language.decorators.singleton import singleton
-from webapps.model.properties.dao.actorenvironment import ActorsEnvironment
+from webapps.model.properties.dao.actorenvironment import actuatorsEnvironment
 from webapps.model.properties.dao.actorenvironment import ActorProfile
 
 
@@ -76,7 +76,7 @@ class TplusOpenApiProfile(ActorProfile):
     
     @property
     def actor_identifier(self) -> str:
-        return ActorsEnvironment.make_identifier(
+        return actuatorsEnvironment.make_identifier(
             self.actor_profile[TplusOpenApiProfile.__ACTOR_PACKAGE__], 
             self.actor_profile[TplusOpenApiProfile.__ACTOR_CLASS__])
      

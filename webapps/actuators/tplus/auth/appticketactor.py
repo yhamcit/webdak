@@ -11,8 +11,8 @@ import httpx
 from webapps.endpoints.tplus.auth.appticket import AppTicket
 from webapps.endpoints.tplus.auth.apptoken import AppToken
 from webapps.language.errors.tpluserror import AppTicketRejectedByServer, AppTicketRequestReject
-from webapps.model.actors.tplusappticketrepo import TplusAppTicketRepo
-from webapps.model.properties.dao.actorenvironment import ActorsEnvironment
+from webapps.model.actuators.tplusappticketrepo import TplusAppTicketRepo
+from webapps.model.properties.dao.actorenvironment import actuatorsEnvironment
 from webapps.model.properties.dao.tplusprofile import TplusOpenApiProfile
 
 from webapps.modules.lumber.lumber import Lumber
@@ -30,7 +30,7 @@ from webapps.modules.requests.httpresponse import HttpResponseParser
 @singleton
 class AppTicketActor(object):
 
-    _timber = Lumber.timber("actors")
+    _timber = Lumber.timber("actuators")
 
     _app_id_ = "86816166-240D-46D8-9BDD-CDE315D84DF0"
 
@@ -40,9 +40,9 @@ class AppTicketActor(object):
     
     __ENCRYPT_MSG__ = "encryptMsg"
 
-    __ACTOR_PROFILE__ = ActorsEnvironment() \
+    __ACTOR_PROFILE__ = actuatorsEnvironment() \
                         .get_actor_profile(
-                            ActorsEnvironment.make_identifier(__module__, "AppTicketActor"))
+                            actuatorsEnvironment.make_identifier(__module__, "AppTicketActor"))
 
     def __init__(self, actor_profile) -> None:
         self._app_ticket_repo = TplusAppTicketRepo()
@@ -171,9 +171,9 @@ class AppTicketActor(object):
 
 class TplusHttpCall(HttpCall):
 
-    # __ACTOR_PROFILE__ = ActorsEnvironment() \
+    # __ACTOR_PROFILE__ = actuatorsEnvironment() \
     #                     .get_actor_profile(
-    #                         ActorsEnvironment.make_identifier(__module__, "AppTicketActor"))
+    #                         actuatorsEnvironment.make_identifier(__module__, "AppTicketActor"))
 
     __BASE_URL__    = AppTicketActor.__ACTOR_PROFILE__.base_url
     __APP_KEY__     = AppTicketActor.__ACTOR_PROFILE__.app_key

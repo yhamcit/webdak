@@ -4,7 +4,7 @@ from webapps.language.decorators.singleton import singleton
 
 
 @singleton
-class ActorsEnvironment(object):
+class actuatorsEnvironment(object):
 
     def __init__(self):
         self._environment = dict()
@@ -66,6 +66,6 @@ class ActorProfile(object):
     
     @property
     def model_identifier(self) -> str:
-        return ActorsEnvironment.make_identifier(
+        return actuatorsEnvironment.make_identifier(
             self.profile[ActorProfile.__MODEL_PACKAGE__], 
             self.profile[ActorProfile.__MODEL_CLASS__])
