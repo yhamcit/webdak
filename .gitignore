@@ -166,5 +166,8 @@ conf/
 # test/temporary 
 test/
 
+# binary files
+bin/
+
 # visual studio code
 .vscode
