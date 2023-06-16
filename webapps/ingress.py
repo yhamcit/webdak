@@ -1,13 +1,9 @@
 
 from quart import Quart, request
 
-from webapps.actuators.tplus.auth.appticketactor import AppTicketActor
+from webapps.actuators.tplus.auth.appticketactuator import AppTicketActuator
 from webapps.language.errors.tpluserror import AppTicketExpired, AppTicketNotAvialable
-from webapps.model.properties.dao.actorenvironment import actuatorsEnvironment
 
-from webapps.model.properties.preference import Preference
-
-from webapps.endpoints.tplus.auth.appticket import AppTicket
 from webapps.modules.coroutinpromise.promisepool import PromisePool
 from webapps.modules.coroutinpromise.promisepool import PromiseIdentifier
 
@@ -30,17 +26,17 @@ async def actor_tplus_app_token():
 
     if request.method == "GET":
         try:
-            app_token = await AppTicketActor().exchange_app_ticket()
+            app_token = await AppTicketActuator().exchange_app_ticket()
 
             return app_token
         except AppTicketNotAvialable or AppTicketExpired as error:
             pass
 
-    await AppTicketActor().renew_app_token()
+    await AppTicketActuator().renew_app_token()
     __timber.info("AppTicketActor.renew_app_token()")
 
     app_ticket = await PromisePool.for_promise(app_tocken_actr_promise, None)
-    app_token = await AppTicketActor().exchange_app_ticket(app_ticket)
+    app_token = await AppTicketActuator().exchange_app_ticket(app_ticket)
     
     return app_token
 
@@ -48,7 +44,7 @@ async def actor_tplus_app_token():
 @app.route("/endpoints/healthz")
 async def hello():
     __timber.info("/endpoints/healthz")
-    return AppTicketActor.success()
+    return AppTicketActuator.success()
 
 
 app_ticket_ep_promise = PromiseIdentifier("tplus_actuators_channel", "tplus_authen", "/endpoints/tplus/auth/appTicket")
@@ -60,9 +56,9 @@ async def ep_tplus_auth_apptoken():
     content = await request.get_json()
     __timber.info(content)
 
-    app_ticket = AppTicketActor().resolve_ticket(content)
+    app_ticket = AppTicketActuator().resolve_ticket(content)
 
     PromisePool.deliver(app_ticket_ep_promise, app_ticket)
 
-    return AppTicketActor.success()
+    return AppTicketActuator.success()
 

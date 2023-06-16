@@ -22,13 +22,11 @@ from webapps.modules.requests.httpcall import HttpCall
 from webapps.language.decorators.singleton import singleton
 
 from webapps.modules.requests.httpmethods import Post
-from webapps.modules.requests.httpresponse import HttpResponseParser
-
 
 
 
 @singleton
-class AppTicketActor(object):
+class AppTicketActuator(object):
 
     _timber = Lumber.timber("actuators")
 
@@ -42,7 +40,7 @@ class AppTicketActor(object):
 
     __ACTOR_PROFILE__ = actuatorsEnvironment() \
                         .get_actor_profile(
-                            actuatorsEnvironment.make_identifier(__module__, "AppTicketActor"))
+                            actuatorsEnvironment.make_identifier(__module__, "AppTicketActuator"))
 
     def __init__(self, actor_profile) -> None:
         self._app_ticket_repo = TplusAppTicketRepo()
@@ -52,18 +50,18 @@ class AppTicketActor(object):
                                     .make_builder()
         
     async def renew_app_token(self):
-        AppTicketActor._timber.debug("renew_app_token")
+        AppTicketActuator._timber.debug("renew_app_token")
 
         http_call = self.http_call_builder.build(TplusHttpCall)
         
         await http_call.refresh_app_ticket()
 
     async def exchange_app_ticket(self, app_ticket: AppTicket = None):
-        AppTicketActor._timber.debug("exchange_app_ticket")
+        AppTicketActuator._timber.debug("exchange_app_ticket")
 
         http_call = self.http_call_builder.build(TplusHttpCall)
 
-        certificate = AppTicketActor.__ACTOR_PROFILE__.app_token_certifcate
+        certificate = AppTicketActuator.__ACTOR_PROFILE__.app_token_certifcate
 
         ticket = self.app_ticket.ticket if app_ticket is None else app_ticket.ticket
 
@@ -120,11 +118,11 @@ class AppTicketActor(object):
 
     @staticmethod
     def success():
-        return json.dumps(AppTicketActor.__SUCCESS__)
+        return json.dumps(AppTicketActuator.__SUCCESS__)
 
     @staticmethod
     def failure():
-        return json.dumps(AppTicketActor.__FAILURE__)
+        return json.dumps(AppTicketActuator.__FAILURE__)
 
     @property
     def actor_profile(self):
@@ -152,7 +150,7 @@ class AppTicketActor(object):
 
     def resolve_ticket(self, content: str):
         infomation = self.decrypt_push_message(content)
-        AppTicketActor._timber.debug("decrypt ticket: {infomation}")
+        AppTicketActuator._timber.debug("decrypt ticket: {infomation}")
 
         return AppTicket(infomation)
 
@@ -161,7 +159,7 @@ class AppTicketActor(object):
         decrypt_key = self.actor_profile.cipher_key.encode("utf8")
         cipher = AES.new(decrypt_key, AES.MODE_ECB)
 
-        ciphertext = content[AppTicketActor.__ENCRYPT_MSG__]
+        ciphertext = content[AppTicketActuator.__ENCRYPT_MSG__]
         cipherbytes = bytes(ciphertext, encoding='utf8')
         raw_text = unpad(cipher.decrypt(base64.decodebytes(cipherbytes)), 16)
         infomation = raw_text.decode("utf8")
@@ -175,12 +173,12 @@ class TplusHttpCall(HttpCall):
     #                     .get_actor_profile(
     #                         actuatorsEnvironment.make_identifier(__module__, "AppTicketActor"))
 
-    __BASE_URL__    = AppTicketActor.__ACTOR_PROFILE__.base_url
-    __APP_KEY__     = AppTicketActor.__ACTOR_PROFILE__.app_key
-    __APP_SECRET__  = AppTicketActor.__ACTOR_PROFILE__.app_secret
-    __CERTIFICATE__ = AppTicketActor.__ACTOR_PROFILE__.app_token_certifcate
-    __TICKET_PATH__ = AppTicketActor.__ACTOR_PROFILE__.app_ticket_api_path
-    __TOKEN_PATH__  = AppTicketActor.__ACTOR_PROFILE__.app_token_api_path
+    __BASE_URL__    = AppTicketActuator.__ACTOR_PROFILE__.base_url
+    __APP_KEY__     = AppTicketActuator.__ACTOR_PROFILE__.app_key
+    __APP_SECRET__  = AppTicketActuator.__ACTOR_PROFILE__.app_secret
+    __CERTIFICATE__ = AppTicketActuator.__ACTOR_PROFILE__.app_token_certifcate
+    __TICKET_PATH__ = AppTicketActuator.__ACTOR_PROFILE__.app_ticket_api_path
+    __TOKEN_PATH__  = AppTicketActuator.__ACTOR_PROFILE__.app_token_api_path
 
     @Post(__TICKET_PATH__, headers =
          {
@@ -188,12 +186,12 @@ class TplusHttpCall(HttpCall):
             TplusOpenApiProfile.__APP_SECRET__: __APP_SECRET__,
          })
     def refresh_app_ticket(self, response: httpx.Response) -> str:
-        AppTicketActor._timber.debug("TplusHttpCall.refresh_app_ticket()")
+        AppTicketActuator._timber.debug("TplusHttpCall.refresh_app_ticket()")
 
         if response.status_code != httpx.codes.OK:
             raise AppTicketRequestReject("Server rejected the request, check AppKey\AppSecrect. Doese target company match request?")
         
-        return AppTicketActor.success()
+        return AppTicketActuator.success()
         
 
     @Post(__TOKEN_PATH__, headers =
@@ -203,7 +201,7 @@ class TplusHttpCall(HttpCall):
             "Content-Type": "application/json"
          })
     def exchange_app_token(self, response: httpx.Response):
-        AppTicketActor._timber.debug("TplusHttpCall.exchange_app_token()")
+        AppTicketActuator._timber.debug("TplusHttpCall.exchange_app_token()")
         
         if response.status_code != httpx.codes.OK:
             raise AppTicketRejectedByServer("App ticket rejected by server. Checked Certificates?")

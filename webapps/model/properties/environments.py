@@ -18,7 +18,7 @@ class Evironments(object):
     __LOGGING__ = "lumber"
     __REDIS__ = "redis"
     __DATABASE__ = "database"
-    __actuators__ = "actuators"
+    __ACTUATORS__ = "actuators"
 
     def __init__(self) -> None:
         __CONFIG_ENV = "WEBDAK_CONF"
@@ -72,7 +72,7 @@ class Evironments(object):
 
     @property
     def actuators(self) -> dict:
-        return self._configuration[Evironments.__actuators__]
+        return self._configuration[Evironments.__ACTUATORS__]
     
     # @database.setter
     # def database(self, db_type: str) -> None:

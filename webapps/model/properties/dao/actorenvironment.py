@@ -11,7 +11,7 @@ class actuatorsEnvironment(object):
         self._actor_profile_vault = dict()
 
     def __iter__(self) -> tuple:
-        return (ActorProfile(name, actor_env) for name, actor_env in self._environment.items())
+        return (ActuatorProfile(name, actor_env) for name, actor_env in self._environment.items())
     
     @property
     def environment(self) -> dict:
@@ -32,14 +32,14 @@ class actuatorsEnvironment(object):
         return ".".join((pn, cn))
 
 
-class ActorProfile(object):
+class ActuatorProfile(object):
 
-    __MODEL_PACKAGE__ = "ModelPackage"
-    __MODEL_CLASS__ = "ModelClass"
+    __MODEL_PACKAGE__ = "Package"
+    __MODEL_CLASS__ = "Class"
 
-    def __init__(self, name: str, actor_profile: dict) -> None:
+    def __init__(self, name: str, profile: dict) -> None:
         self._name = name
-        self._profile = actor_profile
+        self._profile = profile
 
     @property
     def name(self) -> str:
@@ -58,14 +58,14 @@ class ActorProfile(object):
 
     @property
     def model_package_name(self) -> str:
-        return self.profile[ActorProfile.__MODEL_PACKAGE__]
+        return self.profile[ActuatorProfile.__MODEL_PACKAGE__]
     
     @property
     def model_class_name(self) -> str:
-        return self.profile[ActorProfile.__MODEL_CLASS__]
+        return self.profile[ActuatorProfile.__MODEL_CLASS__]
     
     @property
     def model_identifier(self) -> str:
         return actuatorsEnvironment.make_identifier(
-            self.profile[ActorProfile.__MODEL_PACKAGE__], 
-            self.profile[ActorProfile.__MODEL_CLASS__])
+            self.profile[ActuatorProfile.__MODEL_PACKAGE__], 
+            self.profile[ActuatorProfile.__MODEL_CLASS__])

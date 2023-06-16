@@ -2,19 +2,18 @@
 
 from webapps.language.decorators.singleton import singleton
 from webapps.model.properties.dao.actorenvironment import actuatorsEnvironment
-from webapps.model.properties.dao.actorenvironment import ActorProfile
+from webapps.model.properties.dao.actorenvironment import ActuatorProfile
 
 
 @singleton
-class TplusOpenApiProfile(ActorProfile):
+class TplusOpenApiProfile(ActuatorProfile):
 
-    __ACTOR__ = "actor"
     __APP_TICKET__ = "AppTicket"
     __APP_TOKEN__ = "AppToken"
     __CIPHER_KEY__ = "cipherKey"
 
-    __ACTOR_PACKAGE__ = "ActorPackage"
-    __ACTOR_CLASS__ = "ActorClass"
+    __ACTOR_PACKAGE__ = "Package"
+    __ACTOR_CLASS__ = "Class"
 
     __BASE_URL__ = "BaseUrl"
     __APP_KEY__ = "appKey"
@@ -38,17 +37,8 @@ class TplusOpenApiProfile(ActorProfile):
     @profile.setter
     def profile(self, profile) -> None:
         super().set_profile(profile)
-        self.actor_profile = profile[TplusOpenApiProfile.__ACTOR__]
         self.app_ticket = profile[TplusOpenApiProfile.__APP_TICKET__]
         self.app_token = profile[TplusOpenApiProfile.__APP_TOKEN__]
-
-    @property
-    def actor_profile(self) -> dict:
-        return self._actor_profile
-
-    @actor_profile.setter
-    def actor_profile(self, actor_profile) -> None:
-        self._actor_profile = actor_profile
 
     @property
     def app_ticket(self) -> dict:
@@ -68,17 +58,17 @@ class TplusOpenApiProfile(ActorProfile):
     
     @property
     def actor_package_name(self) -> str:
-        return self.actor_profile[TplusOpenApiProfile.__ACTOR_PACKAGE__]
+        return self.app_ticket[TplusOpenApiProfile.__ACTOR_PACKAGE__]
     
     @property
     def actor_class_name(self) -> str:
-        return self.actor_profile[TplusOpenApiProfile.__ACTOR_CLASS__]
+        return self.app_ticket[TplusOpenApiProfile.__ACTOR_CLASS__]
     
     @property
     def actor_identifier(self) -> str:
         return actuatorsEnvironment.make_identifier(
-            self.actor_profile[TplusOpenApiProfile.__ACTOR_PACKAGE__], 
-            self.actor_profile[TplusOpenApiProfile.__ACTOR_CLASS__])
+            self.app_ticket[TplusOpenApiProfile.__ACTOR_PACKAGE__], 
+            self.app_ticket[TplusOpenApiProfile.__ACTOR_CLASS__])
      
     @property
     def base_url(self) -> str:
