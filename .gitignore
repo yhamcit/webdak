@@ -171,3 +171,6 @@ bin/
 
 # visual studio code
 .vscode
+
+# Python vritual environment folder
+venv-py311/
