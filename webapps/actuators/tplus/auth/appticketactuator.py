@@ -206,6 +206,7 @@ class TplusHttpCall(HttpCall):
         if response.status_code != httpx.codes.OK:
             raise AppTicketRejectedByServer("App ticket rejected by server. Checked Certificates?")
         
+        AppTicketActuator._timber.debug("get exchanged token: {response.text}")
         app_token = AppToken(response.json())
 
-        return json.dumps(app_token.values_pack)
+        return app_token.values_pack.token

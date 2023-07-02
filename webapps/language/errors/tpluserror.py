@@ -9,6 +9,9 @@ class AppTicketNotAvialable(TplusException):
 class AppTicketExpired(TplusException):
     pass
 
+class AppTokenUninitialized(TplusException):
+    pass
+
 class AppTokenExpired(TplusException):
     pass
 
