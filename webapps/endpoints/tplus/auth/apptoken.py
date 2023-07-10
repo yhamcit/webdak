@@ -95,6 +95,7 @@ class AppTokenValuePack(object):
             # TODO: handle value error (debug)
             pass
 
+
     @property
     def token(self) -> str:
         return self._access_token
@@ -151,4 +152,4 @@ class AppToken(object):
     @property
     def token_lifetime(self) -> int:
         return (self.values_pack.life_time + self.created_time) - time()
-    
+

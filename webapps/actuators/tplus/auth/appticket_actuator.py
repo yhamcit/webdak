@@ -56,7 +56,7 @@ class AppTicketActuator(object):
         
         await http_call.refresh_app_ticket()
 
-    async def exchange_app_ticket(self, app_ticket: AppTicket = None):
+    async def exchange_app_token_with_ticket(self, app_ticket: AppTicket = None):
         AppTicketActuator._timber.debug("exchange_app_ticket")
 
         http_call = self.http_call_builder.build(TplusHttpCall)
@@ -205,8 +205,9 @@ class TplusHttpCall(HttpCall):
         
         if response.status_code != httpx.codes.OK:
             raise AppTicketRejectedByServer("App ticket rejected by server. Checked Certificates?")
-        
+       
         AppTicketActuator._timber.debug("get exchanged token: {response.text}")
         app_token = AppToken(response.json())
 
         return app_token.values_pack.token
+ 

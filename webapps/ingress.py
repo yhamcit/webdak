@@ -1,7 +1,7 @@
 
 from quart import Quart, request
 
-from webapps.actuators.tplus.auth.appticketactuator import AppTicketActuator
+from webapps.actuators.tplus.auth.appticket_actuator import AppTicketActuator
 from webapps.language.errors.tpluserror import AppTicketExpired, AppTicketNotAvialable
 
 from webapps.modules.coroutinpromise.promisepool import PromisePool
@@ -26,17 +26,17 @@ async def actor_tplus_app_token():
 
     if request.method == "GET":
         try:
-            app_token = await AppTicketActuator().exchange_app_ticket()
+            app_token = await AppTicketActuator().exchange_app_token_with_ticket()
 
             return app_token
         except AppTicketNotAvialable or AppTicketExpired as error:
-            pass
+            __timber.info(f"App Ticket Error - not avialable or expired: {error.__cause__}, renewing.")
 
     await AppTicketActuator().renew_app_token()
     __timber.info("AppTicketActor.renew_app_token()")
 
     app_ticket = await PromisePool.for_promise(app_tocken_actr_promise, None)
-    app_token = await AppTicketActuator().exchange_app_ticket(app_ticket)
+    app_token = await AppTicketActuator().exchange_app_token_with_ticket(app_ticket)
     
     return app_token
 
@@ -47,7 +47,7 @@ async def hello():
     return AppTicketActuator.success()
 
 
-app_ticket_ep_promise = PromiseIdentifier("tplus_actuators_channel", "tplus_authen", "/endpoints/tplus/auth/appTicket")
+app_ticket_ep_promise = PromiseIdentifier("tplus_actuators_channel", "tplus_authen", "/endpoints/tplus/push_msg")
 @app.route(app_ticket_ep_promise.id, methods=["POST"])
 # @PromisePool.deliver(app_ticket_ep_promise)
 async def ep_tplus_auth_apptoken():

@@ -19,7 +19,7 @@ SystemInitiator() \
 
 __timber.info("System boot. Initializing actuators.")
 
-from webapps.actuators.actorinitiator import ActuatorInitiator
+from webapps.actuators.actuator_initiator import ActuatorInitiator
 ActuatorInitiator() \
     .init_actuators() \
     .boot()

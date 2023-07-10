@@ -3,7 +3,7 @@ from importlib import import_module
 
 from re import compile
 from re import match
-from webapps.actuators.actorgroup import ActuatorGroup
+from webapps.actuators.actuator_group import ActuatorGroup
 
 from webapps.model.properties.environments import Evironments
 from webapps.model.properties.dao.actorenvironment import actuatorsEnvironment
@@ -27,17 +27,17 @@ class ActuatorInitiator(object):
             except Exception as error:
                 raise EnvironmentError(error)
             
-            self._actor_env.register_actor_profile(actuator_profile.actor_identifier, 
+            self._actor_env.register_actor_profile(actuator_profile.actuator_identifier, 
                                                    actuator_profile)
 
             try:
-                actor_module = import_module(actuator_profile.actor_package_name)
-                actor_cls = getattr(actor_module, actuator_profile.actor_class_name)
-                actor = actor_cls(actuator_profile)
+                actuator_module = import_module(actuator_profile.actuator_package_name)
+                actuator_cls = getattr(actuator_module, actuator_profile.actuator_class_name)
+                actuator = actuator_cls(actuator_profile)
             except Exception as error:
                 raise EnvironmentError(error)
             
-            ActuatorGroup().register_actuator(actuator_profile.actor_identifier, actor)
+            ActuatorGroup().register_actuator(actuator_profile.actuator_identifier, actuator)
 
         return self
 
