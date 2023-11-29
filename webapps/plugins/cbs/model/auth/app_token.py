@@ -2,6 +2,8 @@ from time import time
 from datetime import datetime
 
 import json
+from typing import Union
+from webapps.modules.lumber.lumber import Lumber
 from webapps.plugins.cbs.errors.cbs_error import AppTokenInvalid
 
 from webapps.plugins.cbs.model.dao.token_value_pack import AppTokenDataPack
@@ -9,9 +11,9 @@ from webapps.plugins.cbs.model.dao.token_value_pack import AppTokenDataPack
 
 class AppToken(object):
 
-    _TEN_SECONDS_   = 10 * 1000
-    _HALF_MINUTE_   = 30 * 1000
-    _TEN_MINUTES_   = 10 * 60 * 1000
+    _TEN_SECONDS_   = 10
+    _HALF_MINUTE_   = 30
+    _TEN_MINUTES_   = 10 * 60
 
     _CODE_          = "code"
     _MESSAGE_       = "msg"
@@ -19,18 +21,20 @@ class AppToken(object):
 
     _SUCCESS_       = "0"
 
-    def __init__(self, value: (dict, str)) -> None:
+    _timber = Lumber.timber("model")
+
+    def __init__(self, value: Union[str, dict]) -> None:
 
         if isinstance(value, str):
             valueset = json.loads(value)
-        if isinstance(value, dict):
+        elif isinstance(value, dict):
             valueset = value
         else:
-            raise AppTokenInvalid(f"App Ticket must be one of (str, dict/json), got {type(value)} -{str(value)}")
+            raise AppTokenInvalid("", f"App Ticket must be one of (str, dict/json), got {type(value)} -{str(value)}")
 
         if valueset[AppToken._CODE_] == AppToken._SUCCESS_:
             self._data_pack = AppTokenDataPack(valueset[AppToken._DATA_])
-            self._created_time = round(datetime.now().timestamp() * 1000)
+            self._created_time = round(time())
         else:
             self._data_pack = None
             self._created_time = -1
@@ -63,7 +67,10 @@ class AppToken(object):
 
     @property
     def token_lifetime(self) -> int:
-        return (self._data_pack.life_time + self._created_time) - time() * 1000
+        cur_time = round(time())
+        life_time = (self._data_pack.life_time + self._created_time) - cur_time
+        AppToken._timber.warning(f"Token {json.dumps(self._valueset)} Create @{self._created_time} Now: {round(time())} life-time: {life_time}")
+        return life_time
 
     def is_valid(self) -> bool:
         if self.created_time <= 0 or not self._data_pack:

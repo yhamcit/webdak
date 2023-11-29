@@ -89,6 +89,10 @@ cdef extern from "gcrypt.h":
         GCRYSEXP_FMT_BASE64    = 2,
         GCRYSEXP_FMT_ADVANCED  = 3
 
+    cdef enum gcry_ecc_ctx_get:
+        GCRY_PK_GET_PUBKEY  = 1,
+        GCRY_PK_GET_SECKEY  = 2
+
 
     const char *gcry_strerror (gcry_error_t err)
 
@@ -123,6 +127,8 @@ cdef extern from "gcrypt.h":
     gcry_error_t gcry_sexp_build (gcry_sexp_t *retsexp, size_t *erroff, const char *format, ...)
 
     gcry_error_t gcry_sexp_build_array (gcry_sexp_t *retsexp, size_t *erroff, const char *format, void **arg_list)
+
+
 
 
     gcry_sexp_t gcry_sexp_find_token (gcry_sexp_t list, const char *tok, size_t toklen)

@@ -7,8 +7,8 @@ import base64
 from quart import ResponseReturnValue, request
 from quart.views import MethodView
 
-from Crypto.Util.Padding import unpad
-from Crypto.Cipher import AES
+from Cryptodome.Util.Padding import unpad
+from Cryptodome.Cipher import AES
 from webapps.modules.requests.dao.http_errors import HttpRequestReject
 
 from webapps.language.decorators.singleton import Singleton

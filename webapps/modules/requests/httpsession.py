@@ -7,24 +7,20 @@ from httpx import Response
 from http.cookiejar import Cookie, CookieJar
 
 from webapps.modules.requests.dao.http_errors import HttpSessionInitialized
-from webapps.modules.requests.httpheaders import HttpHeaders
-from webapps.modules.requests.httpheadhandler import HttpHeadHandler
+from webapps.modules.requests.httpheaderpod import HttpHeaderPod
 
 class HttpSession(object):
 
-    def __init__(self, scheme: str = "", hostname: str = "", sessionid: str = "", headers: HttpHeaders=None, handler: HttpHeadHandler=None) -> None:
+    def __init__(self, scheme: str = "", hostname: str = "", sessionid: str = "", headers: HttpHeaderPod=None) -> None:
         self._url_object = None
         self._scheme = scheme
         self._hostname = hostname
         self._sessionid = sessionid
 
         if not headers:
-            self._headers = HttpHeaders()
+            self._headers = HttpHeaderPod()
         else:
             self._headers = headers
-
-        if not handler:
-            self._handler = handler
 
         self._cookie_jar = CookieJar()
 
@@ -61,11 +57,11 @@ class HttpSession(object):
         self._sessionid = sessionid
 
     @property
-    def headers(self) -> HttpHeaders:
+    def headers(self) -> HttpHeaderPod:
         return self._headers
     
     @headers.setter
-    def headers(self, headers: HttpHeaders) -> None:
+    def headers(self, headers: HttpHeaderPod) -> None:
         self._headers = headers
 
     @property
@@ -105,21 +101,6 @@ class HttpSession(object):
 
         # TODO: deal with cookie jar
         return jar
-
-    def pickup_headers(self, response: httpx.Response=None):
-
-        assert response
-
-        headers = HttpHeaders(defaults=response.headers)
-
-        # TODO: deal with cookies
-        # jar = self.draw_cookie_update(response)
-        # self.cookie_jar.update(jar)
-
-        if self._handler:
-            response = self._handler.pickup_headers(headers)
-
-        return response
 
 
     def supplement_headers(self, headers: dict) -> dict:

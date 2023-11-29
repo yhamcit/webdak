@@ -17,7 +17,7 @@ from webapps.modules.lumber.lumber import Lumber
 
 from webapps.modules.plugin.endpoints import PluginEndpoint
 from webapps.modules.requests.httpcallbuilder import HttpCallBuilder
-from webapps.modules.requests.httpheaders import HttpHeaders
+from webapps.modules.requests.httpheaderpod import HttpHeaderPod
 
 from webapps.plugins.tplus.actuators.api_broker_call import TplusOpenapiBrokerHttpCall
 from webapps.plugins.tplus.actuators.app_ticket_call import TplusTicketHttpCall
@@ -38,7 +38,7 @@ from webapps.plugins.tplus.model.properties.tplus_openapi_properties import Tplu
 @Singleton
 class TplusOpenapiBroker(PluginEndpoint):
 
-    _timber = Lumber.timber("endpoints")
+    _timber = Lumber.timber("tplus")
     _err_timber = Lumber.timber("error")
 
     _ARGKEY_GRANT_TYPE_    = "grantType"
@@ -60,7 +60,7 @@ class TplusOpenapiBroker(PluginEndpoint):
                 return "A valid request must contain specified: 'Content-Type' as 'application/json'."
 
             content_type = view_request.headers.get(TplusRestfulapiBrokerRequest._REQUEST_HEADER_CONTENT_TYPE_)
-            if (content_type != HttpHeaders._HDV_MIME_JSON_):
+            if (content_type != HttpHeaderPod._HDV_MIME_JSON_):
                 return 'Content-Type not supported!'
 
             request = TplusRestfulapiBrokerRequest(await view_request.get_json())
@@ -93,7 +93,7 @@ class TplusOpenapiBroker(PluginEndpoint):
             TplusOpenApiProperties._APP_KEY_: props.app_key,
             TplusOpenApiProperties._APP_SECRET_: props.app_secret
         }
-        self._http_call_builder.headers = HttpHeaders(defaults =header_dic)
+        self._http_call_builder.headers = HttpHeaderPod(defaults =header_dic)
 
         
     def get_app_ticket(self) -> AppTicket:
@@ -123,7 +123,7 @@ class TplusOpenapiBroker(PluginEndpoint):
         try:
             ticket = self.get_app_ticket()
         except (SerializableObjectNotAvialable, AppTicketExpired) as error:
-            TplusOpenapiBroker._timber.info(f"App Ticket Error - not avialable or expired: '{error}', RENEWING.")
+            TplusOpenapiBroker._timber.warning(f"App Ticket not avialable or expired: '{error}', Renewing...")
             ticket = await self.renew_app_ticket()
         finally:
             return ticket
@@ -133,7 +133,7 @@ class TplusOpenapiBroker(PluginEndpoint):
         try:
             token = self.get_token()
         except (SerializableObjectNotAvialable, AppTokenExpired, AppTokenInvalid) as error:
-            TplusOpenapiBroker._timber.info(f"App Token not avialable or expired: '{error}', RENEWING needed.")
+            TplusOpenapiBroker._timber.warning(f"App Token not avialable or expired: '{error}', Renewing...")
 
             ticket = await self.try_fetch_ticket()
             token = await self.exchange_for_token(ticket)
@@ -144,13 +144,13 @@ class TplusOpenapiBroker(PluginEndpoint):
     async def renew_app_ticket(self):
         TplusOpenapiBroker._timber.debug(f"Calling renew_app_ticket()")
 
-        http_call = self._http_call_builder.build(TplusTicketHttpCall, self._conf_vault)
+        http_call = self._http_call_builder.build(TplusTicketHttpCall)
 
         try:
             await http_call.refresh_app_ticket()
             app_tic = await PromisePool.wish(self._tic_identifier, None)
         except Exception as error:
-            TplusOpenapiBroker._err_timber.error(f"Skipped waiting for app-ticket promise because: {error} - {error.args}")
+            TplusOpenapiBroker._err_timber.error(f"Not waiting for promise: {error} - {error.args}")
             raise(error)
 
         return app_tic
@@ -158,7 +158,7 @@ class TplusOpenapiBroker(PluginEndpoint):
     async def exchange_for_token(self, app_tic: AppTicket =None):
         TplusOpenapiBroker._timber.debug("Calling exchange_for_token()")
 
-        http_call = self._http_call_builder.build(TplusAppTokenHttpCall, self._conf_vault)
+        http_call = self._http_call_builder.build(TplusAppTokenHttpCall)
 
         exchange_params = {
             TplusEndpointProfile._APP_TICKET_: app_tic.ticket,
@@ -177,7 +177,7 @@ class TplusOpenapiBroker(PluginEndpoint):
             TplusOpenapiBroker._ARGKEY_REFRESH_TOKEN_: app_tok.refresh_token
         }
 
-        http_call = self._http_call_builder.build(TplusAppTokenHttpCall, self._conf_vault)
+        http_call = self._http_call_builder.build(TplusAppTokenHttpCall)
 
         token_json = await http_call.refresh_app_token(url_params =refresh_params)
         return AppToken(token_json)
@@ -186,9 +186,9 @@ class TplusOpenapiBroker(PluginEndpoint):
     async def request(self, api_path: str, api_method: str, request_body: dict):
 
         app_token = await self.try_fetch_token()
-        headers = HttpHeaders(defaults={TplusOpenapiBrokerHttpCall._HDR_APP_TOKEN_: app_token.access_token})
+        headers = HttpHeaderPod(defaults={TplusOpenapiBrokerHttpCall._HDR_APP_TOKEN_: app_token.access_token})
 
-        http_call = self._http_call_builder.build(TplusOpenapiBrokerHttpCall, self._conf_vault, api_path =api_path, api_method =api_method)
+        http_call = self._http_call_builder.build(TplusOpenapiBrokerHttpCall, api_path =api_path, api_method =api_method)
         http_call.update_http_headers(headers)
 
         return await http_call.broker_api_call(api_path, api_method, json =request_body)

@@ -9,12 +9,17 @@ class AppTokenDataPack(object):
 
     _TOKEN_         = "token"
     _TOKEN_TYPE_    = "token_type"
+    _TOKENTYPE_     = "tokenType"
     _EXPIRES_       = "expires"
 
     def __init__(self, valueset: dict) -> None:
         try:
             self._token = valueset[AppTokenDataPack._TOKEN_]
-            self._token_type = valueset[AppTokenDataPack._TOKEN_TYPE_]
+            if AppTokenDataPack._TOKEN_TYPE_ in valueset:
+                self._token_type = valueset[AppTokenDataPack._TOKEN_TYPE_]
+            elif AppTokenDataPack._TOKENTYPE_ in valueset:
+                self._token_type = valueset[AppTokenDataPack._TOKENTYPE_]
+
             self._expires = int(valueset[AppTokenDataPack._EXPIRES_])
         except KeyError as error:
             raise AppTokenInvalid(error)

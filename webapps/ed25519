@@ -1,0 +1,46 @@
+# from typing import Any
+
+# from Crypto.Util.Padding import unpad
+# from Crypto.Cipher import AES
+
+# def ed25519_sign_verify():
+#     from Crypto.PublicKey import ECC
+#     from Crypto.Signature import eddsa
+#     from Crypto.Hash import SHA512
+
+#     _ed25519_key_private_ = b"""-----BEGIN OPENSSH PRIVATE KEY-----
+#     b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+#     QyNTUxOQAAACAjyTJVHi3HRj31IDkGhiMKbFjvYh1wNp4/B6amKJJ6BwAAAKAvJ6YULyem
+#     FAAAAAtzc2gtZWQyNTUxOQAAACAjyTJVHi3HRj31IDkGhiMKbFjvYh1wNp4/B6amKJJ6Bw
+#     AAAED/sa1axOMwTs3RxE9tKpppSP/aMVSVeGihFjVuB/qGHiPJMlUeLcdGPfUgOQaGIwps
+#     WO9iHXA2nj8HpqYoknoHAAAAFml0YWRtaW5AVk0tMS0xNy1jZW50b3MBAgMEBQYH
+#     -----END OPENSSH PRIVATE KEY-----"""
+
+#     _app_id_ = "86816166-240D-46D8-9BDD-CDE315D84DF0"
+#     _app_secret_ = "2E32AE814FFFA39B9915FED26E44B430"
+
+
+#     _ed25519_key_public_ = b"""ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICPJMlUeLcdGPfUgOQaGIwpsWO9iHXA2nj8HpqYoknoH itadmin@VM-1-17-centos"""
+
+#     # key = ECC.generate(curve='Ed25519')
+
+#     # with open('tplus','rt') as f:
+#     #     pv_key = ECC.import_key(f.read())
+#     pv_key = ECC.import_key(_ed25519_key_private_)
+
+#     # with open('tplus.pub','rt') as f:
+#         # pb_key = ECC.import_key(f.read())
+#     pb_key = ECC.import_key(_ed25519_key_public_)
+
+
+#     message = b'I give my permission to order #4355'
+#     prehashed_message = SHA512.new(message)
+#     signer = eddsa.new(pv_key, 'rfc8032')
+#     signature = signer.sign(prehashed_message)
+
+#     verifier = eddsa.new(pb_key, 'rfc8032')
+#     try:
+#         verifier.verify(prehashed_message, signature)
+#         print("The message is authentic")
+#     except ValueError:
+#         print("The message is not authentic")

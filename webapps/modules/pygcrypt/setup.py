@@ -2,7 +2,6 @@
 from setuptools import Extension, setup
 from Cython.Build import cythonize
 
-from pysmx import SM3
 
 """
 
@@ -27,16 +26,12 @@ more information, such as the ld(1) and ld.so(8) manual pages.
 
 
 py_x_sources =  [
-    "pygcrypt.pyx"
+    "./pygcrypt.pyx"
 ]
 
-py_x_sources =  [
-    "/opt/webdak/webapps/modules/pygcrypt/pygcrypt.pyx"
-]
-
-include_dirs = ["/opt/python/include/site/python3.11/gcrypt"]
+include_dirs = ["/opt/python/lib/libgpg/include/"]
 c_libraries = ["gcrypt"]
-library_dirs =["/opt/python/lib/libgcrypt"]
+library_dirs =["/opt/python/lib/libgpg/lib"]
 
 exts = [Extension("pygcrypt", py_x_sources, include_dirs=include_dirs, libraries=c_libraries, library_dirs=library_dirs)]
 

@@ -2,7 +2,6 @@
 
 from typing import Any
 from webapps.language.decorators.singleton import Singleton
-from webapps.modules.lumber.lumber import Lumber
 from webapps.model.auth.access.access_errors import SerializableObjectNotAvialable
 
 from webapps.model.identifier import ModelIdentifier
@@ -11,8 +10,6 @@ from webapps.model.identifier import ModelIdentifier
 @Singleton
 class SerializableObjectDepot(object):
 
-    _timber = Lumber.timber("model")
-
     def __init__(self) -> None:
         self._vault = dict()
 
@@ -20,7 +17,7 @@ class SerializableObjectDepot(object):
     def get(self, identifier: ModelIdentifier) -> Any:
 
         if identifier not in self._vault:
-            raise SerializableObjectNotAvialable()
+            raise SerializableObjectNotAvialable("Serializable object not found", f"{identifier} not found in depot.")
         
         return self._vault[identifier]
 
@@ -31,6 +28,6 @@ class SerializableObjectDepot(object):
             serialization = str(serializable)
 
         if identifier in self._vault:
-            SerializableObjectDepot._timber.debug(f"Serializable object updated: {serialization}")
+            SerializableObjectDepot._timber.debug("Serializable object updated", f"overwrite key: {serialization}")
 
         self._vault[identifier] = serialization

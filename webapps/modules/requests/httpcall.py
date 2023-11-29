@@ -1,12 +1,11 @@
 
-from typing import Any
+from typing import Any, Callable, NoReturn, Self
 
-from webapps.modules.requests.httpheaders import HttpHeaders
+from httpx import Response
+from webapps.modules.requests.httpheaderpod import HttpHeaderPod
+
 
 from webapps.modules.requests.httpsession import HttpSession
-from webapps.modules.requests.httpresponse import HttpResponseParser
-from webapps.modules.requests.httpinterceptor import HttpInterceptor
-from webapps.modules.requests.httpheadhandler import HttpHeadHandler
 
 
 
@@ -19,6 +18,9 @@ class HttpCall(object):
         self._api_path = api_path
         self._api_method = api_method
         self._http_session = http_session
+        self._interceptor_func = None
+        self._parser_func = None
+        self._response = None
 
     @property
     def base_url(self) -> str:
@@ -45,12 +47,12 @@ class HttpCall(object):
         self._api_method = api_method
 
     @property
-    def http_envalue_set(self) -> dict:
-        return self._http_envalue_set
+    def response(self) -> bytes:
+        return self._response
     
-    @http_envalue_set.setter
-    def http_envalue_set(self, http_profile: dict) -> None:
-        self._http_envalue_set = http_profile
+    @response.setter
+    def response(self, response: bytes) -> None:
+        self._response = response
 
     @property
     def http_session(self) -> HttpSession:
@@ -61,49 +63,33 @@ class HttpCall(object):
         self._http_session = http_session
 
     @property
-    def env_value_set(self) -> dict:
-        return self._env_value_set
-
-    @property
-    def http_head_handler(self) -> HttpHeadHandler:
-        return self._http_head_handler
-    
-    @http_head_handler.setter
-    def http_head_handler(self, handler: HttpHeadHandler) -> None:
-        self._http_head_handler = handler
-
-    @property
-    def response_parser(self) -> HttpResponseParser:
-        return self._response_parser
-    
-    @response_parser.setter
-    def response_parser(self, parser: HttpResponseParser) -> None:
-        self._response_parser = parser
-
-    @property
-    def http_interceptor(self) -> HttpInterceptor:
-        return self._http_interceptor
+    def http_interceptor(self) -> Callable[[Self, str, HttpHeaderPod, HttpSession], Self]:
+        return self._interceptor_func
     
     @http_interceptor.setter
-    def http_interceptor(self, interceptor: HttpInterceptor) -> None:
-        self._http_interceptor = interceptor
+    def http_interceptor(self, parser: Callable[[Self, str, HttpHeaderPod, HttpSession], Self]) -> NoReturn:
+        self._interceptor_func = parser
 
-    def set_session(self, http_session: HttpSession) -> None:
-        self.http_session = http_session
-        return self
-        
-    def set_http_head_handler(self, handler: HttpHeadHandler) -> None:
-        self.http_head_handler = handler
-        return self
+    @property
+    def response_parser(self) -> Callable[[Self, Response, HttpHeaderPod, HttpSession, {}], Self]:
+        return self._parser_func
+    
+    @response_parser.setter
+    def response_parser(self, parser: Callable[[Self, Response, HttpHeaderPod, HttpSession, {}], Self]) -> NoReturn:
+        self._parser_func = parser
 
-    def set_response_parser(self, parser: HttpResponseParser) -> None:
-        self.http_reponse_parser = parser
-        return self
-
-    def set_http_interceptor(self, interceptor: HttpInterceptor) -> None:
-        self.http_interceptor = interceptor
+    def set_session(self, http_session: HttpSession) -> Self:
+        self._http_session = http_session
         return self
 
-    def update_http_headers(self, headers: (dict, HttpHeaders), opt_in: tuple =None) -> None:
+    def set_response_parser(self, parser: Callable[[Self, Response, HttpHeaderPod, HttpSession, {}], Self]) -> Self:
+        self._parser_func = parser
+        return self
+
+    def set_http_interceptor(self, interceptor: Callable[[Self, str, HttpHeaderPod, HttpSession], Self]) -> Self:
+        self._interceptor_func = interceptor
+        return self
+
+    def update_http_headers(self, headers: (dict, HttpHeaderPod), opt_in: tuple =None) -> Self:
         self._http_session.headers.update(headers, opt_in)
         return self

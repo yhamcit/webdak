@@ -17,7 +17,7 @@ from webapps.model.properties.dao.env_errors import ConfigContentError
 from webapps.modules.requests.dao.http_errors import HttpInvalidUrl
 from webapps.modules.lumber.lumber import Lumber
 from webapps.modules.requests.httpcall import HttpCall
-from webapps.modules.requests.httpheaders import HttpHeaders
+from webapps.modules.requests.httpheaderpod import HttpHeaderPod
 
 
 
@@ -102,10 +102,16 @@ class HttpMethods(object):
 
         async with AsyncClient(http2=http2) as client:
             try:
-                response = await client.request(method, url, headers = headers, cookies = session.cookies, **kwargs)
-                session.pickup_headers(response)
+                if http_call.http_interceptor:
+                    http_call.http_interceptor(http_call, url, headers=headers, cookies=session, **kwargs)
 
-                return func(http_call, response)
+                response = await client.request(method, url, headers =headers, cookies =session.cookies, **kwargs)
+
+                if http_call.response_parser:
+                    http_call.response_parser(http_call, response, headers=headers, session=session, **kwargs)
+
+                return func(http_call, response, session)
+
             except ReadTimeout as excp_err:
                 HttpMethods._timber.critical(f"Network timeout: {excp_err.request}")
             except ConnectTimeout as excp_err:
@@ -121,8 +127,8 @@ class HttpMethods(object):
     @staticmethod
     def REQUEST(call_path: str=None, 
                 call_method: str = None, 
-                header_filter:tuple =HttpHeaders._HTTP_DEFAULT_HEADERS_LIST_, 
-                cust_headers: dict = HttpHeaders._HTTP_DEFAULT_HEADERS_, 
+                header_filter:tuple =HttpHeaderPod._HTTP_DEFAULT_HEADERS_LIST_, 
+                cust_headers: dict = HttpHeaderPod._HTTP_DEFAULT_HEADERS_, 
                 protocol: str='HTTP/1.1'):
 
         def decorator(func):
@@ -136,6 +142,7 @@ class HttpMethods(object):
 
                 url_encoded = HttpMethods.finalize_url(http_call, http_path, params =url_params,
                                                        fragment =url_fragments, argv =url_argv)
+                http_call.api_path = url_encoded
                 
                 headers = HttpMethods.inflate_session_headers(http_call, header_filter, cust_headers)
 

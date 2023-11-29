@@ -1,27 +1,28 @@
 #! /usr/bin/bash
 
-export LIBDIR=/opt/python/lib/libgcrypt
+export LIBDIR=/opt/python/lib/libgpg/lib
 # export LIBDIR=/usr/local/lib
 
 export LD_LIBRARY_PATH=${LIBDIR}
 export LD_RUN_PATH=${LIBDIR}
 
-rm -f build/lib.linux-x86_64-cpython-311/pygcrypt.cpython-311-x86_64-linux-gnu.so && x86_64-linux-gnu-gcc -pthread -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions -Wl,-rpath -Wl,/usr/local/lib -g -fwrapv -O2 build/temp.linux-x86_64-cpython-311/pygcrypt.o -L/opt/webdak/webapps/modules/pygcrypt -l:libgcrypt.so.20.4.2 -o build/lib.linux-x86_64-cpython-311/pygcrypt.cpython-311-x86_64-linux-gnu.so
+source /opt/python/bin/activate
 
+echo ' ==>(1): Clean stale builds.'
+rm -rf pygcrypt.c pygcrypt*.so ./build/* 2>/dev/nul
+
+echo ' ==>(2): Determine library evnironment.'
 echo 'library: gcrypt could be found and linked via: '
-libgcrypt-config --libs
+/opt/python/lib/libgpg/bin/libgcrypt-config --libs
 
-echo 'Clean builds.'
-rm -rf pygcrypt.c pygcrypt.cpython-311-x86_64-linux-gnu.so build
-
+echo ' ==>(3): compile cypthon.'
 python setup.py build_ext --inplace
 
-rm -f build/lib.linux-x86_64-cpython-311/pygcrypt.cpython-311-x86_64-linux-gnu.so
-x86_64-linux-gnu-gcc -pthread -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions \
--Wl,-rpath -Wl,${LIBDIR} -g -fwrapv -O2 build/temp.linux-x86_64-cpython-311/pygcrypt.o -l:libgcrypt.so.20.4.2 -o build/lib.linux-x86_64-cpython-311/pygcrypt.cpython-311-x86_64-linux-gnu.so
 
-cp build/lib.linux-x86_64-cpython-311/pygcrypt.cpython-311-x86_64-linux-gnu.so ./
+echo ' ==>(6): compiling cypthon.'
+mv -f ./pygcrypt.cpython-311-x86_64-linux-gnu.so ./pygcrypt.so
 
-chown webdak:users pygcrypt.cpython-311-x86_64-linux-gnu.so pygcrypt.c
 
-ldd pygcrypt.cpython-311-x86_64-linux-gnu.so
+chown webdak:users pygcrypt.so pygcrypt.c
+
+ldd ./pygcrypt.so

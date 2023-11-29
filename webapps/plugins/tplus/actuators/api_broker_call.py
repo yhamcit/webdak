@@ -1,14 +1,13 @@
 import httpx
 import json
 
-from Crypto.Util.Padding import unpad
-from Crypto.Cipher import AES
 
 from quart import request
 from webapps.modules.plugin.endpoints import PluginEndpoint
 
 from webapps.modules.plugin.plugin_blueprint import PluginBlueprint
-from webapps.modules.requests.httpheaders import HttpHeaders
+from webapps.modules.requests.httpheaderpod import HttpHeaderPod
+from webapps.modules.requests.httpsession import HttpSession
 from webapps.plugins.tplus.endpoints.auth.ticket import AppTicketEndpoints
 
 from webapps.model.auth.access.tic_tok_depot import SerializableObjectDepot
@@ -37,19 +36,19 @@ class TplusOpenapiBrokerHttpCall(HttpCall):
 
     _HDR_APP_TOKEN_             = "openToken"
 
-    __broker_api_header_filter = HttpHeaders._HTTP_DEFAULT_HEADERS_LIST_ + (
-        HttpHeaders._HDR_CONTENT_TYPE_, 
+    __broker_api_header_filter = HttpHeaderPod._HTTP_DEFAULT_HEADERS_LIST_ + (
+        HttpHeaderPod._HDR_CONTENT_TYPE_, 
         TplusOpenApiProperties._APP_KEY_,
         TplusOpenApiProperties._APP_SECRET_,
         _HDR_APP_TOKEN_
     )
-    __broker_api_cust_headers  = HttpHeaders._HTTP_DEFAULT_HEADERS_ | {
-        HttpHeaders._HDR_CONTENT_TYPE_: HttpHeaders._HDV_MIME_JSON_
+    __broker_api_cust_headers  = HttpHeaderPod._HTTP_DEFAULT_HEADERS_ | {
+        HttpHeaderPod._HDR_CONTENT_TYPE_: HttpHeaderPod._HDV_MIME_JSON_
     }
 
 
     @HttpMethods.REQUEST(header_filter =__broker_api_header_filter, cust_headers =__broker_api_cust_headers)
-    def broker_api_call(self, response: httpx.Response):
+    def broker_api_call(self, response: httpx.Response, session: HttpSession):
         TplusOpenapiBrokerHttpCall._timber.debug("TplusOpenapiBrokerHttpCall.broker_post()")
         
         try:

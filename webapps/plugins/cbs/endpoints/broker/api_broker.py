@@ -5,20 +5,20 @@ import base64
 
 from datetime import datetime
 from typing import Any
-from httpx import ConnectTimeout, ReadTimeout
+from httpx import ConnectTimeout, ReadTimeout, Response
 
 from quart import ResponseReturnValue, request as view_request
 from quart.views import View
 
-import gmssl
-
 
 from webapps.model.auth.access.access_errors import SerializableObjectNotAvialable
 from webapps.model.auth.access.tic_tok_depot import SerializableObjectDepot
+from webapps.modules.requests.httpcall import HttpCall
 from webapps.modules.requests.httpcallbuilder import HttpCallBuilder
-from webapps.modules.requests.httpheaders import HttpHeaders
+from webapps.modules.requests.httpheaderpod import HttpHeaderPod
 
 from webapps.modules.plugin.endpoints import PluginEndpoint
+from webapps.modules.requests.httpsession import HttpSession
 
 from webapps.plugins.cbs.actuator.api_broker_call import CBSOpenapiBrokerHttpCall
 from webapps.plugins.cbs.errors.cbs_error import AppTokenExpired, AppTokenInvalid
@@ -55,7 +55,7 @@ class SM2Cryptograhp(Sequence):
 
 class CBSRestfulapiBroker(PluginEndpoint):
 
-    _timber = Lumber.timber("endpoints")
+    _timber = Lumber.timber("cbs")
     _err_timber = Lumber.timber("error")
 
     __ARGKEY_APP_ID__       = "app_id"
@@ -78,7 +78,7 @@ class CBSRestfulapiBroker(PluginEndpoint):
                 return "A valid request must contain specified: 'Content-Type' as 'application/json'."
 
             content_type = view_request.headers.get(CBSRestfulapiBrokerRequest._REQUEST_HEADER_CONTENT_TYPE_)
-            if (content_type != HttpHeaders._HDV_MIME_JSON_):
+            if (content_type != HttpHeaderPod._HDV_MIME_JSON_):
                 return 'Content-Type not supported!'
 
             try:
@@ -89,10 +89,9 @@ class CBSRestfulapiBroker(PluginEndpoint):
             except ConnectTimeout as excp_err:
                 return f"Remote host connection timeout: {excp_err.request}", 400
             except Exception as error:
-                CBSRestfulapiBroker._err_timber.error(f"{error}")
-                CBSRestfulapiBroker._err_timber.error(f"{error.args}")
+                CBSRestfulapiBroker._err_timber.error(f"{error}", f"{error.args}")
 
-                return "Request data can not be processed", 404
+                return f"Request data can not be processed, reason: {error} - {str(error.args)}", 404
 
 
     def __init__(self, name: str, profile: CBSEndpointProfile, props: CBSOpenApiProperties) -> None:
@@ -101,6 +100,18 @@ class CBSRestfulapiBroker(PluginEndpoint):
         self._profile = profile
         self._props = props
         self._conf_vault = dict()
+
+        def decrypt_parser(http_call: HttpCall, response: Response, headers: HttpHeaderPod, session: HttpSession, **kwargs):
+
+            headers = HttpHeaderPod(defaults=response.headers)
+
+            if headers.test(CBSOpenapiBrokerHttpCall._X_MBCLOUD_ENCRYPTION_EN_, CBSOpenapiBrokerHttpCall._X_MBCLOUD_ENCRYPTION_TRUE_):
+                http_call.response = self.decrypt_content(response.content)
+            else:
+                http_call.response = response.content
+            
+            return http_call
+
         
         self._seri_obj_depot = SerializableObjectDepot()
         self._http_call_builder = HttpCallBuilder(props.base_url)
@@ -109,17 +120,20 @@ class CBSRestfulapiBroker(PluginEndpoint):
 
         self._cipherware = sm2(pub_key=props.public_cipher_key, prv_key=props.private_cipher_key)
 
+        self._http_parser = decrypt_parser
 
     def get_token(self) -> AppToken:
         try:
             app_token = AppToken(self._seri_obj_depot.get(self._identifier))
 
             if not app_token.is_valid():
-                raise AppTokenExpired(f"App_Token life time: {app_token.life_time}")
-            
+                raise AppTokenExpired("App_Token expired", 
+                                      f"token life time: {app_token.token_lifetime}", 
+                                      (f"{app_token.created_time}", f"{app_token.data_pack.life_time}"))
+
             return app_token
         except KeyError as error:
-            raise AppTokenInvalid(error)
+            raise AppTokenInvalid(f"Token not exist", f"KeyError ID: {self._identifier}", error.args)
 
 
     def put_token(self, app_token) -> str:
@@ -179,6 +193,24 @@ class CBSRestfulapiBroker(PluginEndpoint):
         return sm2_cipher
 
 
+    def decrypt_content(self, bin_content: bytes, asn1 :bool=False) -> bytes:
+
+        if asn1:
+            cipher = SM2Cryptograhp()
+            cipher['c1'] = int.from_bytes(c1)
+            cipher['c2'] = int.from_bytes(c2)
+            cipher['c3'] = int.from_bytes(c3)
+
+        else:
+            c1 = bin_content[:65]
+            c2 = bin_content[65:97]
+            c3 = bin_content[97:]
+
+        plain_binary = self._cipherware.decrypt(c1 =c1, c2 =c2, c3 =c3)
+
+        return plain_binary
+
+
     async def requrie_token(self):
 
         json_params = {
@@ -187,8 +219,10 @@ class CBSRestfulapiBroker(PluginEndpoint):
             CBSOpenapiBrokerHttpCall._ARGKEY_GRANT_TYPE_: CBSOpenapiBrokerHttpCall._ARGVAL_CLIENT_CREDENTIALS_
         }
 
-        http_call = self._http_call_builder.build(CBSOpenapiBrokerHttpCall, self._conf_vault)
+        http_call = self._http_call_builder.build(CBSOpenapiBrokerHttpCall)
         tok_text = await http_call.require_token(json =json_params)
+
+        assert tok_text
 
         app_token = AppToken(tok_text)
         self.put_token(app_token)
@@ -198,15 +232,12 @@ class CBSRestfulapiBroker(PluginEndpoint):
 
     async def refresh_token(self, app_token: AppToken):
 
-        headers = HttpHeaders(defaults={CBSOpenapiBrokerHttpCall._HDR_AUTHORIZATION_: f"Bearer {app_token.token}"})
+        headers = HttpHeaderPod(defaults={CBSOpenapiBrokerHttpCall._HDR_AUTHORIZATION_: f"Bearer {app_token.token}"})
 
-        http_call = self._http_call_builder.build(CBSOpenapiBrokerHttpCall, self._conf_vault)
+        http_call = self._http_call_builder.build(CBSOpenapiBrokerHttpCall)
         http_call.update_http_headers(headers)
 
         tok_text = await http_call.refresh_token()
-
-        app_token = AppToken(tok_text)
-        self.put_token(app_token)
 
         return AppToken(tok_text)
 
@@ -218,15 +249,14 @@ class CBSRestfulapiBroker(PluginEndpoint):
         try:
             app_token = self.get_token()
         except (SerializableObjectNotAvialable, AppTokenExpired, AppTokenInvalid) as error:
-            CBSRestfulapiBroker._timber.warning(f"Require another token needed: {error} {error.args}")
+            CBSRestfulapiBroker._timber.warning(f"Require another token needed: {error} {str(error.args)}")
 
             app_token = await self.requrie_token()
         except Exception as error:
-            CBSRestfulapiBroker._err_timber(f"{error.args}")
-            CBSRestfulapiBroker._err_timber(traceback.format_exc())
+            CBSRestfulapiBroker._err_timber(f"{error.args} \n {traceback.format_exc()}")
             raise error
-        else:
-            app_token = await self.refresh_token(app_token)
+        # else:
+        #     app_token = await self.refresh_token(app_token)
 
         return await self.do_request(api_path, api_method, app_token, json_body)
 
@@ -243,16 +273,18 @@ class CBSRestfulapiBroker(PluginEndpoint):
 
         cipher_bytes = self.encrypt_content(request_data_bytes)
 
-        http_call = self._http_call_builder.build(CBSOpenapiBrokerHttpCall, self._conf_vault, api_path =api_path, api_method =api_method)
+        http_call = self._http_call_builder.build(CBSOpenapiBrokerHttpCall, api_path =api_path, api_method =api_method).set_response_parser(self._http_parser)
 
         headers = {
             CBSOpenapiBrokerHttpCall._HDR_AUTHORIZATION_: f"Bearer {app_token.token}", 
             CBSOpenapiBrokerHttpCall._HDR_X_MBCLOUD_API_SIGN_: signature,
             CBSOpenapiBrokerHttpCall._HDR_X_MBCLOUD_TIMESTAMP_: str(timestamp),
         }
-        http_call.update_http_headers(HttpHeaders(defaults=headers))
+        http_call.update_http_headers(HttpHeaderPod(defaults=headers))
 
-        return await http_call.broker_api_call(content =cipher_bytes)
+        response = await http_call.broker_api_call(content =cipher_bytes)
+
+        return response
 
 
     @staticmethod
