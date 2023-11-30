@@ -5,10 +5,13 @@ from webapps.language.decorators.singleton import Singleton
 from webapps.model.auth.access.access_errors import SerializableObjectNotAvialable
 
 from webapps.model.identifier import ModelIdentifier
+from webapps.modules.lumber.lumber import Lumber
 
 
 @Singleton
 class SerializableObjectDepot(object):
+
+    _timber = Lumber.timber("model")
 
     def __init__(self) -> None:
         self._vault = dict()
@@ -28,6 +31,6 @@ class SerializableObjectDepot(object):
             serialization = str(serializable)
 
         if identifier in self._vault:
-            SerializableObjectDepot._timber.debug("Serializable object updated", f"overwrite key: {serialization}")
+            SerializableObjectDepot._timber.debug(f"Serializable object overwritten: {serialization}")
 
         self._vault[identifier] = serialization

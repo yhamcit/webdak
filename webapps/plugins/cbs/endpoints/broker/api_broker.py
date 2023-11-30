@@ -249,7 +249,7 @@ class CBSRestfulapiBroker(PluginEndpoint):
         try:
             app_token = self.get_token()
         except (SerializableObjectNotAvialable, AppTokenExpired, AppTokenInvalid) as error:
-            CBSRestfulapiBroker._timber.warning(f"Require another token needed: {error} {str(error.args)}")
+            CBSRestfulapiBroker._timber.warning(f"Require another token needed: {error}")
 
             app_token = await self.requrie_token()
         except Exception as error:

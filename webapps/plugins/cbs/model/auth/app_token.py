@@ -1,5 +1,4 @@
 from time import time
-from datetime import datetime
 
 import json
 from typing import Union
@@ -34,16 +33,11 @@ class AppToken(object):
 
         if valueset[AppToken._CODE_] == AppToken._SUCCESS_:
             self._data_pack = AppTokenDataPack(valueset[AppToken._DATA_])
-            self._created_time = round(time())
-        else:
-            self._data_pack = None
-            self._created_time = -1
-
-        self._valueset = valueset
+            self._code = valueset[AppToken._CODE_]
 
 
     def __str__(self) -> str:
-        return json.dumps(self._valueset)
+        return json.dumps(self._data_pack)
 
     @property
     def token(self) -> str:
@@ -51,30 +45,25 @@ class AppToken(object):
 
     @property
     def valueset(self) -> dict:
-        return self._valueset
+        return self._data_pack
 
     @property
     def data_pack(self) -> AppTokenDataPack:
         return self._data_pack
 
     @property
-    def code(self) -> dict:
-        return self._valueset[AppToken._CODE_]
-
-    @property
-    def created_time(self) -> dict:
-        return self._created_time
+    def code(self) -> str:
+        return self._code
 
     @property
     def token_lifetime(self) -> int:
-        cur_time = round(time())
-        life_time = (self._data_pack.life_time + self._created_time) - cur_time
-        AppToken._timber.warning(f"Token {json.dumps(self._valueset)} Create @{self._created_time} Now: {round(time())} life-time: {life_time}")
-        return life_time
+        return self._data_pack.life_time
 
     def is_valid(self) -> bool:
-        if self.created_time <= 0 or not self._data_pack:
+        if not hasattr(self, '_data_pack'):
             return False
 
-        return self.token_lifetime >= AppToken._TEN_SECONDS_
+        AppToken._timber.warning(f"Token {self._data_pack.token} life-time: {self.token_lifetime} now: {round(time())}, life-left: {self.token_lifetime - round(time())}")
+
+        return self.token_lifetime - round(time()) >= AppToken._TEN_SECONDS_
 
