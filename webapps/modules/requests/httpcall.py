@@ -1,10 +1,7 @@
 
-from typing import Any, Callable, NoReturn, Self
+from typing import Any, Callable, NoReturn, Self, Union
 
-from httpx import Response
 from webapps.modules.requests.httpheaderpod import HttpHeaderPod
-
-
 from webapps.modules.requests.httpsession import HttpSession
 
 
@@ -90,6 +87,6 @@ class HttpCall(object):
         self._interceptor_func = interceptor
         return self
 
-    def update_http_headers(self, headers: (dict, HttpHeaderPod), opt_in: tuple =None) -> Self:
+    def update_http_headers(self, headers: Union[dict, HttpHeaderPod], opt_in: tuple =None) -> Self:
         self._http_session.headers.update(headers, opt_in)
         return self
