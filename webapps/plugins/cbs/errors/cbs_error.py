@@ -1,5 +1,5 @@
 
-class CBSException(Exception):
+class CBSException(BaseException):
     pass
 
 class CBSProfileException(CBSException):

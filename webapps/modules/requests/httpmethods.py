@@ -18,6 +18,7 @@ from webapps.modules.requests.dao.http_errors import HttpInvalidUrl
 from webapps.modules.lumber.lumber import Lumber
 from webapps.modules.requests.httpcall import HttpCall
 from webapps.modules.requests.httpheaderpod import HttpHeaderPod
+from webapps.plugins.tplus.model.dao.tplus_errors import TplusException
 
 
 
@@ -112,13 +113,14 @@ class HttpMethods(object):
 
                 return func(http_call, response, session)
 
+            except TplusException as excp_err:
+                HttpMethods._timber.critical(f"Unexpected exception: {str(excp_err)}")
             except ReadTimeout as excp_err:
                 HttpMethods._timber.critical(f"Network timeout: {excp_err.request}")
             except ConnectTimeout as excp_err:
                 HttpMethods._timber.critical(f"Connection timeout: {excp_err.request}")
             except Exception as excp_err:
-                HttpMethods._timber.critical(f"Unexpected exception: {excp_err}, cauz: {excp_err.args}")
-                raise(excp_err)
+                HttpMethods._timber.critical(f"Unexpected exception: {str(excp_err)}")
 
     @staticmethod
     def raise_on_4xx_5xx(response):

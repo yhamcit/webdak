@@ -1,5 +1,6 @@
 
 
+import json
 import httpx
 
 from webapps.modules.lumber.lumber import Lumber
@@ -14,8 +15,9 @@ from webapps.plugins.tplus.model.properties.tplus_openapi_properties import Tplu
 
 class TplusAppTokenHttpCall(HttpCall):
 
-    _timber         = Lumber.timber("endpoints")
-    _err_timber     = Lumber.timber("error")
+    _timber     = Lumber.timber("endpoints")
+    _err_timber = Lumber.timber("error")
+
 
     __exchange_token_header_filter = HttpHeaderPod._HTTP_DEFAULT_HEADERS_LIST_ + (
         HttpHeaderPod._HDR_CONTENT_TYPE_, 
@@ -32,10 +34,9 @@ class TplusAppTokenHttpCall(HttpCall):
         
         if response.status_code != httpx.codes.OK:
             raise AppTicketRejectedByServer("App ticket rejected by server. Checked Certificates?")
-       
+        
         try:
             TplusAppTokenHttpCall._timber.debug(f"get exchanged token: {response.text}")
-
             return response.json()
         except Exception as error:
             TplusAppTokenHttpCall._timber.debug(f"Error: {error}; Remote server reject because of: {response.text}")

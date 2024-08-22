@@ -16,6 +16,7 @@ from webapps.modules.coroutinpromise.promisepool import PromisePool
 from webapps.modules.lumber.lumber import Lumber
 
 from webapps.modules.plugin.endpoints import PluginEndpoint
+from webapps.modules.requests.dao.http_errors import HttpServerReject
 from webapps.modules.requests.httpcallbuilder import HttpCallBuilder
 from webapps.modules.requests.httpheaderpod import HttpHeaderPod
 
@@ -27,7 +28,7 @@ from webapps.plugins.tplus.endpoints.auth.ticket import AppTicketEndpoints
 from webapps.plugins.tplus.model.auth.app_ticket import AppTicket
 from webapps.plugins.tplus.model.auth.app_token import AppToken
 from webapps.plugins.tplus.model.dao.api_broker_request import TplusRestfulapiBrokerRequest
-from webapps.plugins.tplus.model.dao.tplus_errors import AppTicketExpired, AppTokenExpired, AppTokenInvalid
+from webapps.plugins.tplus.model.dao.tplus_errors import AppTicketExpired, AppTicketRejectedByServer, AppTokenExpired, AppTokenInvalid, TplusException
 from webapps.plugins.tplus.model.properties.tplus_endpoint_profile import TplusEndpointProfile
 from webapps.plugins.tplus.model.properties.tplus_openapi_properties import TplusOpenApiProperties
 
@@ -46,6 +47,9 @@ class TplusOpenapiBroker(PluginEndpoint):
 
     _ARGKEY_REFRESH_TOKEN_ = "refreshToken"
 
+    _TPLUS_KEY_ERR         = "error"
+    _TPLUS_KEY_ERR_CODE    = "code"
+
     class BrokerView(View):
 
         methods = ["GET", "POST"]
@@ -63,12 +67,14 @@ class TplusOpenapiBroker(PluginEndpoint):
             if (content_type != HttpHeaderPod._HDV_MIME_JSON_):
                 return 'Content-Type not supported!'
 
-            request = TplusRestfulapiBrokerRequest(await view_request.get_json())
             try:
+                request = TplusRestfulapiBrokerRequest(await view_request.get_json())
                 return await self._endpoint.request(request.api_path, request.api_method, request.body)
-            except Exception as error:
-                TplusOpenapiBroker._err_timber.error(f"{error}")
-                TplusOpenapiBroker._err_timber.error(f"{error.args}")
+            except (TplusException, AppTicketRejectedByServer, HttpServerReject) as exp_err:
+                return str(exp_err), 400
+            except Exception as exp_err:
+                TplusOpenapiBroker._err_timber.error(f"{exp_err}")
+                TplusOpenapiBroker._err_timber.error(f"{exp_err.args}")
 
                 return "Request data is invalid/malformatted", 404
 
@@ -136,9 +142,12 @@ class TplusOpenapiBroker(PluginEndpoint):
             TplusOpenapiBroker._timber.warning(f"App Token not avialable or expired: '{error}', Renewing...")
 
             ticket = await self.try_fetch_ticket()
-            token = await self.exchange_for_token(ticket)
+            try:
+                token = await self.exchange_for_token(ticket)
+            except TplusException as exp_err:
+                raise exp_err
+
             self.put_token(token)
-        finally:
             return token
 
     async def renew_app_ticket(self):
@@ -165,8 +174,14 @@ class TplusOpenapiBroker(PluginEndpoint):
             TplusOpenApiProperties._CERTIFICATE_: self._props.certificate
         }
 
-        token_txt = await http_call.exchange_app_token(json = exchange_params)
-        return AppToken(token_txt)
+        token_obj = await http_call.exchange_app_token(json = exchange_params)
+
+        if token_obj[TplusOpenapiBroker._TPLUS_KEY_ERR] is not None:
+            err_info = token_obj[TplusOpenapiBroker._TPLUS_KEY_ERR]
+            if err_info[TplusOpenapiBroker._TPLUS_KEY_ERR_CODE] is not None and err_info[TplusOpenapiBroker._TPLUS_KEY_ERR_CODE] != '':
+                raise AppTicketRejectedByServer(str(token_obj))
+
+        return AppToken(token_obj)
 
 
     async def refresh_token(self, app_tok: AppToken):
@@ -192,7 +207,6 @@ class TplusOpenapiBroker(PluginEndpoint):
         http_call.update_http_headers(headers)
 
         return await http_call.broker_api_call(api_path, api_method, json =request_body)
-
 
     @property
     def view(self):

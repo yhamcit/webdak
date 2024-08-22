@@ -1,6 +1,6 @@
 
 
-class TplusException(Exception):
+class TplusException(BaseException):
     pass
 
 class TplusPushMsgException(TplusException):
