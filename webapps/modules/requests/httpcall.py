@@ -1,6 +1,8 @@
 
 from typing import Any, Callable, NoReturn, Self, Union
 
+from httpx import Response
+
 from webapps.modules.requests.httpheaderpod import HttpHeaderPod
 from webapps.modules.requests.httpsession import HttpSession
 
