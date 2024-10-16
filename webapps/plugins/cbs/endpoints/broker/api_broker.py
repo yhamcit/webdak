@@ -85,13 +85,13 @@ class CBSRestfulapiBroker(PluginEndpoint):
                 request = CBSRestfulapiBrokerRequest(await view_request.get_json())
                 return await self._endpoint.request(request.api_path, request.api_method, request.body)      
             except ReadTimeout as excp_err:
-                return f"Remote host network timeout: {excp_err.request}", 400
+                return f"Remote host network timeout: {excp_err.request}", 408
             except ConnectTimeout as excp_err:
-                return f"Remote host connection timeout: {excp_err.request}", 400
+                return f"Remote host connection timeout: {excp_err.request}", 408
             except Exception as error:
                 CBSRestfulapiBroker._err_timber.error(f"{error}", f"{error.args}")
 
-                return f"Request data can not be processed, reason: {error} - {str(error.args)}", 404
+                return f"Request data can not be processed, reason: {error} - {str(error.args)}", 406
 
 
     def __init__(self, name: str, profile: CBSEndpointProfile, props: CBSOpenApiProperties) -> None:

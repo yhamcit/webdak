@@ -76,7 +76,7 @@ class TplusOpenapiBroker(PluginEndpoint):
                 TplusOpenapiBroker._err_timber.error(f"{exp_err}")
                 TplusOpenapiBroker._err_timber.error(f"{exp_err.args}")
 
-                return "Request data is invalid/malformatted", 404
+                return "Request data is invalid/malformatted", 406
 
 
     def __init__(self, name: str, profile: TplusEndpointProfile, props: TplusOpenApiProperties) -> None:
@@ -148,7 +148,7 @@ class TplusOpenapiBroker(PluginEndpoint):
                 raise exp_err
 
             self.put_token(token)
-            return token
+        return token
 
     async def renew_app_ticket(self):
         TplusOpenapiBroker._timber.debug(f"Calling renew_app_ticket()")
