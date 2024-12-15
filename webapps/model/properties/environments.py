@@ -2,7 +2,7 @@ from functools import reduce
 from os import environ
 import argparse
 
-import rtoml
+from tomli import load
 
 from pathlib import Path
  
@@ -47,14 +47,15 @@ class Evironments(object):
 
 
     def load(self):
-        try:
-            self._configuration = rtoml.load(Path(self.conf_uri))
-        except FileNotFoundError as error:
-            # TODO: dig error context & info
-            raise ConfigFileError()
-        except Exception as error:
-            # TODO: dig error context & info
-            raise ConfigContentError()
+        with open(Path(self.conf_uri).absolute(), "rb") as f:
+            try:
+                self._configuration = load(f)
+            except FileNotFoundError:
+                # TODO: dig error context & info
+                raise
+            except Exception:
+                # TODO: dig error context & info
+                raise
 
     @property
     def promisepool(self) -> dict:

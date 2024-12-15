@@ -6,8 +6,6 @@ from webapps.modules.lumber.lumber import Lumber
 
 from webapps.model.properties.environments import Evironments
 
-from webapps.model.connectors.db_connector_factory import DatabaseConnectorFactory
-from webapps.model.connectors.redisconnectorfactory import RedisConnectorFactory
 
 from webapps.model.properties.dao.plugin_environment import PluginEnvironment
 from webapps.model.properties.dao.database_environment import DatabaseEnvironment
