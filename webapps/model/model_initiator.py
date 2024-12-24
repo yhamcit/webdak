@@ -20,25 +20,14 @@ class ModelInitiator(object):
         self._app_env.load()
 
         self._lumber_env_vault = LumberEnvironment(self._app_env.logging)
-        self._db_env_vault = DatabaseEnvironment(self._app_env.database)
-        self._redis_env_vault = RedisEnvironment(self._app_env.redis)
-        self._plugin_env_vault = PluginEnvironment(self._app_env.plugins)
+        # self._db_env_vault = DatabaseEnvironment(self._app_env.database)
+        # self._redis_env_vault = RedisEnvironment(self._app_env.redis)
+        # self._plugin_env_vault = PluginEnvironment(self._app_env.plugins)
         self._databases = dict()
         self._redis = None
 
-    def boot(self):
+    def ready(self):
         Lumber(self._app_env.logging).build()
-
-        return self
-
-    def init_database_connection(self):
-        for profile in self.db_env_vault:
-            self._databases[profile.identifier] = DatabaseConnectorFactory().create_connector(profile)
-
-        return self
-
-    def init_redis_connection(self):
-        self._redis = RedisConnectorFactory().create_connector(self.redis_env_vault)
 
         return self
     

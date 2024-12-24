@@ -11,11 +11,7 @@ _timber = Lumber.timber("root")
 _timber.info("System boot. Initializing system components.")
 
 
-ModelInitiator() \
-    .init_database_connection() \
-    .init_redis_connection() \
-    .boot()
-
+ModelInitiator().ready()
 
 SystemInitiator() \
     .init_promise_pool() \

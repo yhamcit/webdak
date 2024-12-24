@@ -9,8 +9,8 @@ class SystemInitiator(object):
 
     def __init__(self) -> None:
         self._app_env = Evironments()
-        self._promisepool_env_vault = PromisePoolEnvironment()
-        self._promisepool_env_vault.environment = self._app_env.promisepool
+        # self._promisepool_env_vault = PromisePoolEnvironment()
+        # self._promisepool_env_vault.environment = self._app_env.promisepool
 
     def boot(self) :
         return self

@@ -1,11 +1,11 @@
-from functools import reduce
-from os import environ
+from os import environ, listdir
+from os.path import join as joinpath, splitext, basename, isdir, isfile
+
 import argparse
+from pathlib import Path
 
 from tomli import load
 
-from pathlib import Path
- 
 from webapps.modules.lumber.lumber import Lumber
 from webapps.language.decorators.singleton import Singleton
 
@@ -85,9 +85,33 @@ class Evironments(object):
         incld_dir = plugin_env[Evironments._PLUGIN_INCLUDES_]
 
         try:
+
+            # for file_name in listdir(self.conf_uri):
+            #     if file_name.startswith(r'.') or (file_name.startswith(r'__') and file_name.endswith(r'__')):
+            #         continue
+
+            #     file_path = joinpath(xl_dir, file_name)
+            #     if isfile(file_path):
+            #         if is_xl_file(file_name):
+            #             with open(file_path, 'rb') as fd:
+            #                 yield fd, file_name
+            #         elif is_csv_file(file_path):
+            #             with open(file_path, 'rt', encoding='ansi') as fd:
+            #                 yield fd, file_name
+            #         elif is_zip_file(file_path):
+            #             yield from xls_in_zip(file_path)
+
+            #     elif isdir(file_path):
+            #         yield from xls_in_dir(file_path)
+
+            #     else:
+            #         print(f" {file_name} 不是 xl、zip文件或文件夹，已忽略。")
+            #         continue
+
             for path in (f for f in Path(Path(self.conf_uri).parent, incld_dir).rglob('**/*') if f.is_file()):
-                profile = rtoml.load(path.absolute())
-                plugin_profiles.update(profile)
+                with open(path.absolute(), "rb") as f:
+                    profile = load(f)
+                    plugin_profiles.update(profile)
         except FileNotFoundError as error:
             raise ConfigFileError(f"Could not read Config file. {error}")
         except Exception as error:

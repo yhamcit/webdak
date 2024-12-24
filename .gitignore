@@ -162,12 +162,18 @@ cython_debug/
 
 # config contents
 conf/
+*.tar.gz
+
+logs/
+logs.*
+*.log
 
 # test/temporary 
 test/
 
 # binary files
 bin/
+c_libs/
 
 # visual studio code
 .vscode
