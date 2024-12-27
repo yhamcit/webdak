@@ -9,9 +9,7 @@ from quart.views import View
 from webapps.language.decorators.singleton import Singleton
 
 from webapps.model.auth.access.access_errors import SerializableObjectNotAvialable
-from webapps.model.identifier import ModelIdentifier
 from webapps.model.auth.access.tic_tok_depot import SerializableObjectDepot
-from webapps.modules.coroutinpromise.promisepool import PromisePool
 
 from webapps.modules.lumber.lumber import Lumber
 
@@ -92,9 +90,6 @@ class TplusOpenapiBroker(PluginEndpoint):
         self._seri_obj_depot = SerializableObjectDepot()
         self._http_call_builder = HttpCallBuilder(props.base_url)
 
-        self._tok_identifier = ModelIdentifier(props.plugin_qualifier, profile.endpoint_qualifier, self.url)
-        self._tic_identifier = AppTicketEndpoints.query_subscription()
-
         header_dic = {
             TplusOpenApiProperties._APP_KEY_: props.app_key,
             TplusOpenApiProperties._APP_SECRET_: props.app_secret
@@ -103,7 +98,7 @@ class TplusOpenapiBroker(PluginEndpoint):
 
         
     def get_app_ticket(self) -> AppTicket:
-        app_tic = AppTicket(self._seri_obj_depot.get(self._tic_identifier))
+        app_tic = AppTicket(self._seri_obj_depot.get(f"{self.__class__.__name__}_AppTicket"))
 
         if not app_tic.is_valid:
             raise AppTicketExpired(f"{app_tic.ticket} has expired. Lifetime: {app_tic.lifetime}.")
@@ -111,7 +106,7 @@ class TplusOpenapiBroker(PluginEndpoint):
         return app_tic
 
     def get_token(self) -> AppToken:
-        app_tok = AppToken(self._seri_obj_depot.get(self._tok_identifier))
+        app_tok = AppToken(self._seri_obj_depot.get(f"{self.__class__.__name__}_AppToken"))
 
         if not app_tok.is_valid:
             if not app_tok.is_expired:
@@ -122,7 +117,7 @@ class TplusOpenapiBroker(PluginEndpoint):
         return app_tok
         
     def put_token(self, app_tok) -> None:
-        self._seri_obj_depot.put(app_tok, self._tok_identifier)
+        self._seri_obj_depot.put(app_tok, f"{self.__class__.__name__}_AppToken")
 
     async def try_fetch_ticket(self) -> AppTicket:
         ticket = None
@@ -157,7 +152,8 @@ class TplusOpenapiBroker(PluginEndpoint):
 
         try:
             await http_call.refresh_app_ticket()
-            app_tic = await PromisePool.wish(self._tic_identifier, None)
+            app_tic = await AppTicketEndpoints().query_app_ticket()
+
         except Exception as error:
             TplusOpenapiBroker._err_timber.error(f"Not waiting for promise: {error} - {error.args}")
             raise(error)

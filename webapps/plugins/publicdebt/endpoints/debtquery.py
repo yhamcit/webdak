@@ -10,11 +10,11 @@ from quart.views import View
 
 from webapps.modules.plugin.endpoints import PluginEndpoint
 from webapps.modules.lumber.lumber import Lumber
-from webapps.plugins.publicdebt.model.dao.debt import LocalPublicDebt
+from webapps.plugins.publicdebt.model.dao.debt_tables import LocalPublicDebt
 from webapps.plugins.publicdebt.model.properties.debtquery import DebtQueryProfile, DebtQueryProperties
 
 
-from webapps.plugins.publicdebt.model.sqlitedb import db
+
 
 
 class PublicDebtQuery(PluginEndpoint):

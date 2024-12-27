@@ -1,13 +1,13 @@
 
 
 
-from abc import abstractproperty
+from abc import abstractmethod
 
 
 
 class Plugin():
 
-    @abstractproperty
+    @abstractmethod
     def endpoints(self):
         pass
 

@@ -20,25 +20,8 @@ class ModelInitiator(object):
         self._app_env.load()
 
         self._lumber_env_vault = LumberEnvironment(self._app_env.logging)
-        # self._db_env_vault = DatabaseEnvironment(self._app_env.database)
-        # self._redis_env_vault = RedisEnvironment(self._app_env.redis)
-        # self._plugin_env_vault = PluginEnvironment(self._app_env.plugins)
-        self._databases = dict()
-        self._redis = None
 
     def ready(self):
         Lumber(self._app_env.logging).build()
 
         return self
-    
-    @property
-    def lumber_env_vault(self) -> DatabaseEnvironment:
-        return self._lumber_env_vault
-    
-    @property
-    def db_env_vault(self) -> DatabaseEnvironment:
-        return self._db_env_vault
-    
-    @property
-    def redis_env_vault(self) -> RedisEnvironment:
-        return self._redis_env_vault

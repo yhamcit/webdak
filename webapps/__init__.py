@@ -14,7 +14,6 @@ _timber.info("System boot. Initializing system components.")
 ModelInitiator().ready()
 
 SystemInitiator() \
-    .init_promise_pool() \
     .boot()
 
 _timber.info("System boot. Initializing actuators.")

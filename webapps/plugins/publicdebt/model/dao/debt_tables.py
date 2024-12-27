@@ -2,13 +2,10 @@ from datetime import datetime
 
 from pony.orm import PrimaryKey, Required, Optional, composite_key
 
-from webapps.modules.dbbroker.sqlite import Sqlitedbs
 
 
-db = Sqlitedbs(db_store=)
 
 
-@db.entity_cls
 class LocalPublicDebt():
     id = PrimaryKey(int)
 

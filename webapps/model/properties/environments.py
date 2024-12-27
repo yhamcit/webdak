@@ -20,7 +20,6 @@ _err_timber = Lumber.timber("error")
 class Evironments(object):
 
     _DEPLOYMENT_        = "deployment"
-    _PROMISEPOOl_       = "promisepool"
     _LOGGING_           = "lumber"
     _REDIS_             = "redis"
     _DATABASE_          = "database"
@@ -57,10 +56,6 @@ class Evironments(object):
                 # TODO: dig error context & info
                 raise
 
-    @property
-    def promisepool(self) -> dict:
-        return self._configuration[Evironments._PROMISEPOOl_]
-    
     @property
     def logging(self) -> dict:
         return self._configuration[Evironments._LOGGING_]

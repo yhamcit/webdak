@@ -19,8 +19,6 @@ from webapps.plugins.tplus.model.auth.app_ticket import AppTicket
 from webapps.model.auth.access.tic_tok_depot import SerializableObjectDepot
 from webapps.plugins.tplus.model.properties.tplus_endpoint_profile import TplusEndpointProfile
 from webapps.plugins.tplus.model.properties.tplus_openapi_properties import TplusOpenApiProperties
-from webapps.model.identifier import ModelIdentifier
-from webapps.modules.coroutinpromise.promisepool import PromisePool
 
 from webapps.modules.lumber.lumber import Lumber
 from webapps.plugins.tplus.core import TplusPlugin
@@ -50,6 +48,7 @@ class AppTicketEndpoints(PluginEndpoint):
         def __init__(self, endpoint: PluginEndpoint) -> None:
             super().__init__()
             self._endpoint = endpoint
+            self._waiting_clients = list()
 
         async def post(self, **kwargs: Any) -> ResponseReturnValue:
             cipher_msg = await request.get_json()
@@ -67,9 +66,9 @@ class AppTicketEndpoints(PluginEndpoint):
                     elif msg_type == AppTicketEndpoints._APP_TICKET_MSG_:
                         ticket = AppTicket(valueset)
                         self._endpoint.put_app_ticket(ticket)
-                        AppTicketEndpoints._timber.info(f"Get pushed ticket: {ticket.ticket}, at time: {ticket.timestamp}")
 
-                        PromisePool.promise(self._endpoint.identifier, ticket)
+                        AppTicketEndpoints._timber.info(f"Get pushed ticket: {ticket.ticket}, at time: {ticket.timestamp}")
+                        # PromisePool.promise(self._endpoint.identifier, ticket)
 
                         return TplusPlugin.success()
                     elif msg_type == AppTicketEndpoints._TEMP_AUTH_CODE_:
@@ -97,24 +96,17 @@ class AppTicketEndpoints(PluginEndpoint):
         self._app_ticket_repo = SerializableObjectDepot()
 
         self._http_envalue_set = {**props.valueset, **profile.valueset}
-        self._identifier = ModelIdentifier(props.plugin_qualifier, profile.endpoint_qualifier, self.url)
-
-        PromisePool.subscribe_channel((self._identifier, ))
     
     @property
     def view(self):
         return AppTicketEndpoints.View.as_view("tplus_ticket", self)
 
     @property
-    def identifier(self):
-        return self._identifier
-
-    @property
     def http_envalue_set(self):
         return self._http_envalue_set
     
     def put_app_ticket(self, ticket: AppTicket):
-        self._app_ticket_repo.put(ticket, self._identifier)
+        self._app_ticket_repo.put(ticket, self.__class__.__name__)
 
     def decrypt_msg(self, content: str) -> dict:
         infomation = self.decrypt_push_message(content)
@@ -135,11 +127,19 @@ class AppTicketEndpoints(PluginEndpoint):
 
         return json.loads(infomation)
 
-    @staticmethod
-    def query_subscription() -> ModelIdentifier:
-        try:
-            return AppTicketEndpoints().identifier
-        except Exception as error:
-            AppTicketEndpoints._timber.critical("AppTicketEndpoints invoked before it is created.")
+    async def query_app_ticket(self) -> AppTicket:
+
+        def subscriber(queue: list, tic: AppTicket= None):
+            tic = yield
+            return tic
+
+        if not :
+            pass
+        else:
+
+            
 
 
+
+
+        return self._ticket

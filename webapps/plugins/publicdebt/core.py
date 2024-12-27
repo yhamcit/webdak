@@ -10,6 +10,7 @@ from webapps.modules.plugin.plugin import Plugin
 from webapps.modules.plugin.endpoints import PluginEndpoint
 from webapps.plugins.publicdebt.model.properties.debtquery import DebtQueryProfile, DebtQueryProperties
 
+from .model.dao import debt_tables
 
 @Singleton
 class PublicDebtPlugin(Plugin):
@@ -18,6 +19,9 @@ class PublicDebtPlugin(Plugin):
         super().__init__()
         self._name = name
         self._props = DebtQueryProperties(name, props.valueset)
+
+        # self._database = Sqlitedb()
+        self._database.create_table_if_not_exist(debt_tables)
 
 
     def endpoints(self) -> Generator[PluginEndpoint, None, None]:
