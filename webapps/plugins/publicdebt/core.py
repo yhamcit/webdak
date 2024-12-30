@@ -21,7 +21,7 @@ class PublicDebtPlugin(Plugin):
         self._props = DebtQueryProperties(name, props.valueset)
 
         # self._database = Sqlitedb()
-        self._database.create_table_if_not_exist(debt_tables)
+        # self._database.create_table_if_not_exist(debt_tables)
 
 
     def endpoints(self) -> Generator[PluginEndpoint, None, None]:

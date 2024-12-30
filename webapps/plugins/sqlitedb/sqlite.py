@@ -1,14 +1,18 @@
 
+from os import getcwd
+
 from inspect import getmembers, isclass
 
-from pony import Database
+from pony.orm import Database
 
 
-db =  Database()
+
+db = Database()
 
 class Sqlitedbs():
     def __init__(self, in_memory: bool= False, db_store: str='', **kwargs):
         self.database = db
+        cwd = getcwd()
 
         if in_memory:
             THREADING = 'threading'
@@ -24,7 +28,7 @@ class Sqlitedbs():
             raise ValueError(f"Database storage name must be provided and '{db_store}' is not valid value when in_memory='False'")
 
         else:
-            self.database.bind(provider='sqlite', filename=db_store)
+            self.database.bind(provider='sqlite', filename=f"{cwd}/{db_store}")
 
     def entity_cls(self, cls):
         return type(cls.__name__, (self.database.Entity, ))

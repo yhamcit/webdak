@@ -96,17 +96,21 @@ class AppTicketEndpoints(PluginEndpoint):
         self._app_ticket_repo = SerializableObjectDepot()
 
         self._http_envalue_set = {**props.valueset, **profile.valueset}
-    
+
+
     @property
     def view(self):
         return AppTicketEndpoints.View.as_view("tplus_ticket", self)
 
+
     @property
     def http_envalue_set(self):
         return self._http_envalue_set
-    
+
+
     def put_app_ticket(self, ticket: AppTicket):
         self._app_ticket_repo.put(ticket, self.__class__.__name__)
+
 
     def decrypt_msg(self, content: str) -> dict:
         infomation = self.decrypt_push_message(content)
@@ -114,6 +118,7 @@ class AppTicketEndpoints(PluginEndpoint):
         AppTicketEndpoints._timber.debug(f"AppTicketActuator.decrypt_msg() - ticket: {infomation}")
 
         return infomation
+
 
     def decrypt_push_message(self, content) -> dict:
 
@@ -127,19 +132,8 @@ class AppTicketEndpoints(PluginEndpoint):
 
         return json.loads(infomation)
 
+
     async def query_app_ticket(self) -> AppTicket:
-
-        def subscriber(queue: list, tic: AppTicket= None):
-            tic = yield
-            return tic
-
-        if not :
-            pass
-        else:
-
-            
-
-
 
 
         return self._ticket

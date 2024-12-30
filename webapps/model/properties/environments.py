@@ -1,5 +1,4 @@
-from os import environ, listdir
-from os.path import join as joinpath, splitext, basename, isdir, isfile
+from os import environ
 
 import argparse
 from pathlib import Path
