@@ -46,3 +46,7 @@ class Sqlitedbs():
 
                 setattr(module, name, new_cls)
 
+
+    def generate_tables(self):
+        db.generate_mapping(create_tables=True)
+

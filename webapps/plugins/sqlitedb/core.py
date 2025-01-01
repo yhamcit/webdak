@@ -13,18 +13,17 @@ from webapps.plugins.sqlitedb.sqlite import Sqlitedbs
 @Singleton
 class SqlitePlugin(Plugin):
 
-    def __init__(self, name: str, props: PluginClassProperties) -> None:
+    def __init__(self, name: str=None, props: PluginClassProperties=None) -> None:
         super().__init__()
         self._name = name
         self._props = SqliteProperties(name, props.valueset)
         self._database = self._props.database
 
-
         self._database = Sqlitedbs(db_store=self._database.store)
-        self._database.create_table_if_not_exist(tables)
 
 
     def endpoints(self) -> Generator[PluginEndpoint, None, None]:
         for ep in ():
             yield ep
         return
+

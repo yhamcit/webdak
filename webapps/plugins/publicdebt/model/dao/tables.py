@@ -26,3 +26,5 @@ class LocalPublicDebt():
     statistical_scope: Required= Required(str)
     update_time: Required= Required(datetime)
 
+    
+

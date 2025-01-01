@@ -9,6 +9,7 @@ from webapps.model.properties.dao.plugin_class_properties import PluginClassProp
 from webapps.modules.plugin.plugin import Plugin
 from webapps.modules.plugin.endpoints import PluginEndpoint
 from webapps.plugins.publicdebt.model.properties.debtquery import DebtQueryProfile, DebtQueryProperties
+from webapps.plugins.sqlitedb.core import SqlitePlugin
 
 from .model.dao import tables
 
@@ -20,8 +21,10 @@ class PublicDebtPlugin(Plugin):
         self._name = name
         self._props = DebtQueryProperties(name, props.valueset)
 
-        # self._database = Sqlitedb()
-        # self._database.create_table_if_not_exist(debt_tables)
+        # self._database = SqlitePlugin()
+        # self._database.create_table_if_not_exist(tables)
+        # self._database.generate_tables()
+
 
 
     def endpoints(self) -> Generator[PluginEndpoint, None, None]:
