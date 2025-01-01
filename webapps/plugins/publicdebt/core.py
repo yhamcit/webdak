@@ -10,7 +10,7 @@ from webapps.modules.plugin.plugin import Plugin
 from webapps.modules.plugin.endpoints import PluginEndpoint
 from webapps.plugins.publicdebt.model.properties.debtquery import DebtQueryProfile, DebtQueryProperties
 
-from .model.dao import debt_tables
+from .model.dao import tables
 
 @Singleton
 class PublicDebtPlugin(Plugin):

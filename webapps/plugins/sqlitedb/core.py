@@ -6,7 +6,7 @@ from webapps.model.properties.dao.plugin_class_properties import PluginClassProp
 
 from webapps.modules.plugin.plugin import Plugin
 from webapps.modules.plugin.endpoints import PluginEndpoint
-from webapps.plugins.publicdebt.model.dao import debt_tables
+from webapps.plugins.publicdebt.model.dao import tables
 from webapps.plugins.sqlitedb.model.properties.dbprops import SqliteProperties
 from webapps.plugins.sqlitedb.sqlite import Sqlitedbs
 
@@ -21,7 +21,7 @@ class SqlitePlugin(Plugin):
 
 
         self._database = Sqlitedbs(db_store=self._database.store)
-        self._database.create_table_if_not_exist(debt_tables)
+        self._database.create_table_if_not_exist(tables)
 
 
     def endpoints(self) -> Generator[PluginEndpoint, None, None]:

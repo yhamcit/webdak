@@ -1,4 +1,5 @@
 
+from dataclasses import fields, is_dataclass, make_dataclass
 from os import getcwd
 
 from inspect import getmembers, isclass
@@ -28,13 +29,20 @@ class Sqlitedbs():
             raise ValueError(f"Database storage name must be provided and '{db_store}' is not valid value when in_memory='False'")
 
         else:
-            self.database.bind(provider='sqlite', filename=f"{cwd}/{db_store}")
+            self.database.bind(provider='sqlite', filename=f"{cwd}/{db_store}", create_db=True)
 
     def entity_cls(self, cls):
         return type(cls.__name__, (self.database.Entity, ))
     
+
     def create_table_if_not_exist(self, module):
 
         for name, cls in (m for m in getmembers(module) if isclass(m[1])):
-            print(name + cls)
+            if is_dataclass(cls):
+                new_cls = make_dataclass(name, 
+                                         [(f.name, f.type, f.default) for f in fields(cls)], 
+                                         bases=(db.Entity, ), 
+                                         module=module.__name__)
+
+                setattr(module, name, new_cls)
 
