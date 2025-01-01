@@ -51,8 +51,6 @@ class PublicDebtQuery(PluginEndpoint):
         self._profile = profile
         self._props = props
         self._conf_vault = dict()
-        # self._sqlitedb = db
-
 
 
 

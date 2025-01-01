@@ -162,6 +162,7 @@ cython_debug/
 
 # config contents
 conf/
+.db_store/
 *.tar.gz
 
 logs/
