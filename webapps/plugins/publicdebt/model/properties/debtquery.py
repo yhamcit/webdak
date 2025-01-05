@@ -8,6 +8,8 @@ from webapps.model.properties.dao.plugin_class_properties import PluginClassProp
 @Singleton
 class DebtQueryProperties(PluginClassProperties):
 
+    _DATABASE_ = "database"
+
     def __init__(self, name: str = None, valueset: dict = None) -> None:
         super().__init__(name, valueset)
      
@@ -22,6 +24,10 @@ class DebtQueryProperties(PluginClassProperties):
     @property
     def endpoint_profiles(self) -> tuple:
         return self._valueset[PluginClassProperties._ENDPOINTS_]
+
+    @property
+    def database_profiles(self) -> tuple:
+        return self._valueset[DebtQueryProperties._DATABASE_]
 
 
 

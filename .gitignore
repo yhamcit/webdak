@@ -186,7 +186,9 @@ venv-py311/
 logrotate.d/
 nginx.d/
 ssh/
-startup.d/
+st
+
+.db_store/
 
 # Function-Specified resources
 resources/statics/CHANJET_CHECK.txt

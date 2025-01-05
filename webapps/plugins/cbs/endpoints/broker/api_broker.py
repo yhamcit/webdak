@@ -130,7 +130,7 @@ class CBSRestfulapiBroker(PluginEndpoint):
 
             return app_token
         except KeyError as error:
-            raise AppTokenInvalid(f"Token not exist", f"KeyError ID: {sself.__class__.__name__}", error.args)
+            raise AppTokenInvalid(f"Token not exist", f"KeyError ID: {self.__class__.__name__}", error.args)
 
 
     def put_token(self, app_token) -> str:

@@ -11,11 +11,21 @@ from webapps.plugins.sqlitedb.sqlite import Sqlitedbs
 class SqlitePlugin():
 
     def __init__(self, name: str=None, props: PluginClassProperties=None) -> None:
-        super().__init__()
-        self._name = name
-        self._props = SqliteProperties(name, props.valueset)
-        self._database = self._props.database
+        
+        self.name = name
+        # self.__dict__.update(props)
 
-        self._database = Sqlitedbs(db_store=self._database.store)
+        self._props = SqliteProperties(props)
+
+        self._database = Sqlitedbs(db_store=self._props.store)
+
+    
+
+    def create_table_if_not_exist(self, module):
+        self._database.create_table_if_not_exist(module=module)
 
 
+    def generate_tables(self):
+        self._database.generate_tables()
+
+    

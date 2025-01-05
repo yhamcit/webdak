@@ -74,8 +74,6 @@ class AppTicketEndpoints(PluginEndpoint):
                         self._endpoint.put_app_ticket(ticket)
 
                         AppTicketEndpoints._timber.info(f"Get pushed ticket: {ticket.ticket}, at time: {ticket.timestamp}")
-                        # PromisePool.promise(self._endpoint.identifier, ticket)
-
                         return TplusPlugin.success()
                     elif msg_type == AppTicketEndpoints._TEMP_AUTH_CODE_:
                         # 获取企业永久授权码

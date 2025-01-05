@@ -154,9 +154,9 @@ class TplusOpenapiBroker(PluginEndpoint):
             await http_call.refresh_app_ticket()
             app_tic = await AppTicketEndpoints().query_app_ticket()
 
-        except Exception as error:
-            TplusOpenapiBroker._err_timber.error(f"Not waiting for promise: {error} - {error.args}")
-            raise(error)
+        except:
+            TplusOpenapiBroker._err_timber.error("Error happened while acquiring ticket.")
+            raise
 
         return app_tic
 
