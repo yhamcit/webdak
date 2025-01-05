@@ -102,7 +102,7 @@ class Evironments(object):
             #         print(f" {file_name} 不是 xl、zip文件或文件夹，已忽略。")
             #         continue
 
-            for path in (f for f in Path(Path(self.conf_uri).parent, incld_dir).rglob('**/*') if f.is_file()):
+            for path in (f for f in Path(Path(self.conf_uri).parent, incld_dir).rglob('**/*.toml') if f.is_file()):
                 with open(path.absolute(), "rb") as f:
                     profile = load(f)
                     plugin_profiles.update(profile)

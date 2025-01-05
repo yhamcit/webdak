@@ -1,4 +1,3 @@
-from pony.orm import Database
 from webapps.ingress import app
 
 from webapps.modules.lumber.lumber import Lumber

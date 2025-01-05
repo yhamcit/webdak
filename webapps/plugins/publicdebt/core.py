@@ -21,6 +21,7 @@ class PublicDebtPlugin(Plugin):
         self._name = name
         self._props = DebtQueryProperties(name, props.valueset)
 
+        SqliteProperties
         self._database = SqlitePlugin()
         self._database.create_table_if_not_exist(tables)
         self._database.generate_tables()

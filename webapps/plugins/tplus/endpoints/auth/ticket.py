@@ -1,4 +1,5 @@
 
+from asyncio import get_running_loop
 from typing import Any
 import httpx
 import json
@@ -51,8 +52,13 @@ class AppTicketEndpoints(PluginEndpoint):
             self._waiting_clients = list()
 
         async def post(self, **kwargs: Any) -> ResponseReturnValue:
-            cipher_msg = await request.get_json()
-            valueset = AppTicketEndpoints().decrypt_msg(cipher_msg)
+            # cipher_msg = await request.get_json()
+            # valueset = AppTicketEndpoints().decrypt_msg(cipher_msg)
+            data = await request.get_data(as_text=True)
+            try:
+                valueset = json.loads(data)
+            except Exception as e:
+                pass
 
             AppTicketEndpoints._timber.debug(valueset)
 
@@ -92,6 +98,7 @@ class AppTicketEndpoints(PluginEndpoint):
         self._name = name
         self._profile = profile
         self._properties = props
+        self._ticket_push_future = None
 
         self._app_ticket_repo = SerializableObjectDepot()
 
@@ -110,6 +117,10 @@ class AppTicketEndpoints(PluginEndpoint):
 
     def put_app_ticket(self, ticket: AppTicket):
         self._app_ticket_repo.put(ticket, self.__class__.__name__)
+
+        if self._ticket_push_future:
+            self._ticket_push_future.set_result(ticket)
+            self._ticket_push_future = None
 
 
     def decrypt_msg(self, content: str) -> dict:
@@ -134,6 +145,8 @@ class AppTicketEndpoints(PluginEndpoint):
 
 
     async def query_app_ticket(self) -> AppTicket:
+        
+        event_loop = get_running_loop()
+        self._ticket_push_future = event_loop.create_future()
 
-
-        return self._ticket
+        return await self._ticket_push_future
