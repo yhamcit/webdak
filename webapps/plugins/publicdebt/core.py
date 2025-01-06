@@ -11,7 +11,7 @@ from webapps.modules.plugin.endpoints import PluginEndpoint
 from webapps.plugins.publicdebt.model.properties.debtquery import DebtQueryProfile, DebtQueryProperties
 from webapps.plugins.sqlitedb.core import SqlitePlugin
 
-from .model.dao import tables
+
 
 @Singleton
 class PublicDebtPlugin(Plugin):
@@ -22,8 +22,7 @@ class PublicDebtPlugin(Plugin):
         self._props = DebtQueryProperties(name, props.valueset)
 
         self._database = SqlitePlugin(name="sqlite", props=self._props.database_profiles)
-        self._database.create_table_if_not_exist(tables)
-        self._database.generate_tables()
+        self._database.create_table_if_not_exist()
 
 
 

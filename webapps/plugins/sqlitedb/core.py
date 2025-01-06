@@ -1,31 +1,61 @@
-from typing import Generator
+from asyncio import to_thread
+import asyncio
+
+from pathlib import Path
+from sqlite3 import connect as connect_sqlite
 
 from webapps.language.decorators.singleton import Singleton
-
-from webapps.model.properties.dao.plugin_class_properties import PluginClassProperties
-
 from webapps.plugins.sqlitedb.model.properties.dbprops import SqliteProperties
-from webapps.plugins.sqlitedb.sqlite import Sqlitedbs
+
+from webapps.plugins.publicdebt.model.dao.tables import generat_table_stmt, insert_record_stmt, simple_query_stmt, default_query_conditions
+
 
 @Singleton
 class SqlitePlugin():
-
-    def __init__(self, name: str=None, props: PluginClassProperties=None) -> None:
-        
-        self.name = name
-        # self.__dict__.update(props)
+    def __init__(self, name: str=None, props: dict=None):
 
         self._props = SqliteProperties(props)
 
-        self._database = Sqlitedbs(db_store=self._props.store)
+        self.db = Path(self._props.store).absolute()
 
+        # if self._props.in_memory:
+
+        #     assert hasattr(self._props, 'threading'), f"Database threading support must be specified when in_memory='True'"
+
+        #     if self._props.threading:
+        #         self.db.bind(provider='sqlite', filename=':sharedmemory:')
+        #     else:
+        #         self.db.bind(provider='sqlite', filename=':memory:')
+        # else:
+
+        #     assert hasattr(self._props, 'store'), f"Database storage name must be providedwhen in_memory='False'"
+        #     assert self._props.store, f"Database storage name can not be empty, now it's : '{self._props.store}'"
+
+            
+        #     self.db.bind(provider='sqlite', filename=store_path.absolute().as_posix(), create_db=True)
+
+
+
+    def entity_cls(self, cls):
+        return type(cls.__name__, (self.db.Entity, ))
     
 
-    def create_table_if_not_exist(self, module):
-        self._database.create_table_if_not_exist(module=module)
+    def create_table_if_not_exist(self):
+
+        asyncio.run(to_thread(run_sqlite, self.db, generat_table_stmt()))
 
 
-    def generate_tables(self):
-        self._database.generate_tables()
+    async def query_debt(self, params: dict=default_query_conditions):
 
+        result = await to_thread(run_sqlite, self.db, simple_query_stmt(params))
+
+        return result
     
+    
+
+def run_sqlite(db_uri, sql_stat, counts: int=50):
+    with connect_sqlite(db_uri) as db_conn:
+        sql = db_conn.cursor()
+        result = sql.execute(sql_stat)
+
+        return result.fetchmany(counts)

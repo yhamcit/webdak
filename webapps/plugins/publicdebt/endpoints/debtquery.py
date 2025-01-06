@@ -1,21 +1,15 @@
-
-import json
-
 from typing import Any
 
 from quart import ResponseReturnValue, request as view_request
 from quart.views import View
 
-
-
 from webapps.modules.plugin.endpoints import PluginEndpoint
 from webapps.modules.lumber.lumber import Lumber
 from webapps.modules.requests.httpheaderpod import HttpHeaderPod
 from webapps.plugins.publicdebt.model.dao.debtquery_request import DebtQueryRequest
-from webapps.plugins.publicdebt.model.dao.tables import LocalPublicDebt
 from webapps.plugins.publicdebt.model.properties.debtquery import DebtQueryProfile, DebtQueryProperties
 
-
+from webapps.plugins.sqlitedb.core import SqlitePlugin
 
 
 
@@ -74,5 +68,7 @@ class PublicDebtQuery(PluginEndpoint):
 
         response = None
 
+        sqlite = SqlitePlugin()
+        result = await sqlite.query_debt()
 
         return response
