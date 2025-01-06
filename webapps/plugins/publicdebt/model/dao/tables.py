@@ -86,14 +86,14 @@ def generat_table_stmt():
             metropolis TEXT, 
             city TEXT NOT NULL, 
             district TEXT, 
-            local_debt_balances REAL NOT NULL,  # 地方债余额
+            local_debt_balances REAL NOT NULL,
             total_debt_upper_limit REAL, 
-            total_local_bonds REAL,             # 地方债券总额
-            total_debt_amount REAL,             # 地方债务总额
+            total_local_bonds REAL,
+            total_debt_amount REAL,
             total_gdp_amount REAL, 
-            debt_to_gdp_ratio REAL,             # 负债率
-            local_general_public_revenue REAL,  # 一般性公共财政盈余
-            debt_to_revenue_ratio REAL,         # 债务盈余率
+            debt_to_gdp_ratio REAL,
+            local_general_public_revenue REAL,
+            debt_to_revenue_ratio REAL,
             statistical_scope TEXT NOT NULL, 
             update_time TEXT NOT NULL UNIQUE
         )
@@ -110,16 +110,16 @@ def insert_record_stmt(data_mapping: dict):
     
     return insert_record_stmt
     
-def simple_query_stmt(data_mapping: dict):
+def simple_query_stmt(fields: dict):
 
-    if any(data_mapping.values()):
-        match_condition = ' AND '.join(' = '.join((str(k), str(v))) for k, v in data_mapping.items() if v)
+    if any(fields.values()):
+        match_condition = ' AND '.join(' = '.join((str(k), f"'{str(v)}'")) for k, v in fields.items() if v)
         where_clause = f"WHERE {match_condition}"
     else:
         where_clause = ""
 
     simple_query_stmt = f"""
-        SELECT {str(tuple(data_mapping.keys()))} FROM area_public_debt {where_clause}
+        SELECT {', '.join(fields.keys())} FROM area_public_debt {where_clause}
         """
 
     return simple_query_stmt

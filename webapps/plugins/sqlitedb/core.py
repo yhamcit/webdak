@@ -7,7 +7,7 @@ from sqlite3 import connect as connect_sqlite
 from webapps.language.decorators.singleton import Singleton
 from webapps.plugins.sqlitedb.model.properties.dbprops import SqliteProperties
 
-from webapps.plugins.publicdebt.model.dao.tables import generat_table_stmt, insert_record_stmt, simple_query_stmt, default_query_conditions
+from webapps.plugins.publicdebt.model.dao.tables import LocalPublicDebt, generat_table_stmt, insert_record_stmt, simple_query_stmt, default_query_conditions
 
 
 @Singleton

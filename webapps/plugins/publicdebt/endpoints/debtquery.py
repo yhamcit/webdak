@@ -38,7 +38,7 @@ class PublicDebtQuery(PluginEndpoint):
 
             try:
                 request = DebtQueryRequest(await view_request.get_json())
-                return await self._endpoint.request(request.body)      
+                return await self._endpoint.request(request)      
             except Exception as error:
                 return f"Request data can not be processed, reason: {error} - {str(error.args)}", 406
 
@@ -58,17 +58,21 @@ class PublicDebtQuery(PluginEndpoint):
 
 
 
-    async def request(self, json_body: dict):
+    async def request(self, request: DebtQueryRequest):
 
-        return await self.do_request(json_body)
+        return await self.do_query(request)
 
 
 
-    async def do_request(self, json_body: dict):
+    async def do_query(self, request: DebtQueryRequest):
 
-        response = None
+        response = list()
 
         sqlite = SqlitePlugin()
-        result = await sqlite.query_debt()
+
+        for region in request.region:
+            result = await sqlite.query_debt(params=region)
+            response.append(result)
+
 
         return response
