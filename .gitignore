@@ -175,6 +175,7 @@ test/
 # binary files
 bin/
 c_libs/
+node_modules/
 
 # visual studio code
 .vscode

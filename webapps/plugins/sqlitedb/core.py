@@ -41,19 +41,18 @@ class SqlitePlugin():
     
 
     def create_table_if_not_exist(self):
-
         asyncio.run(to_thread(run_sqlite, self.db, generat_table_stmt()))
 
 
     async def query_debt(self, params: dict=default_query_conditions):
 
         result = await to_thread(run_sqlite, self.db, simple_query_stmt(params))
-
         return result
     
     
 
 def run_sqlite(db_uri, sql_stat, counts: int=50):
+
     with connect_sqlite(db_uri) as db_conn:
         sql = db_conn.cursor()
         result = sql.execute(sql_stat)
