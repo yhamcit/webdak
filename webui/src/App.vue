@@ -1,20 +1,30 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import NaviBarView from './components/NaviBarView.vue'
+
+
 </script>
 
 <template>
   <header>
-    <div class="wrapper">
-      <NaviBarView></NaviBarView>
-    </div>
+    <NaviBarView title="地方公共债务" des="省级行政区"></NaviBarView>
 
-    <nav>
-      <RouterLink to="/">地方公共债务</RouterLink>
-      <RouterLink to="/data">数据查看</RouterLink>
-    </nav>
+    <!-- <div>
+      <div>
+        <v-select label="- 选择省 -"
+          :items="['California', 'Colorado', 'Florida', 'Georgia', 'Texas', 'Wyoming']"
+          ></v-select>
+          <v-select label="- 选择市 -"
+          :items="['California', 'Colorado', 'Florida', 'Georgia', 'Texas', 'Wyoming']"
+          ></v-select>
+      </div>
+      <nav>
+        <RouterLink to="/">地图</RouterLink>
+        <RouterLink to="/data">数据</RouterLink>
+      </nav>
+
+    </div> -->
   </header>
-
 
   <RouterView />
 </template>
@@ -31,55 +41,17 @@ header {
   margin: 0 auto 2rem;
 }
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  /* margin-top: 2rem; */
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
 @media (min-width: 1024px) {
   header {
     display: flex;
+    flex-direction: column;
+    justify-content: center;
     place-items: center;
     /* padding-right: calc(var(--section-gap) / 2); */
   }
 
   .logo {
     margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    /* margin-left: -1rem; */
-    font-size: 1rem;
-
-    /* padding: 1rem 0; */
-    /* margin-top: 1rem; */
   }
 }
 </style>
