@@ -1,11 +1,10 @@
-from functools import reduce
 from os import environ
+
 import argparse
-
-import rtoml
-
 from pathlib import Path
- 
+
+from tomli import load
+
 from webapps.modules.lumber.lumber import Lumber
 from webapps.language.decorators.singleton import Singleton
 
@@ -20,7 +19,6 @@ _err_timber = Lumber.timber("error")
 class Evironments(object):
 
     _DEPLOYMENT_        = "deployment"
-    _PROMISEPOOl_       = "promisepool"
     _LOGGING_           = "lumber"
     _REDIS_             = "redis"
     _DATABASE_          = "database"
@@ -47,19 +45,16 @@ class Evironments(object):
 
 
     def load(self):
-        try:
-            self._configuration = rtoml.load(Path(self.conf_uri))
-        except FileNotFoundError as error:
-            # TODO: dig error context & info
-            raise ConfigFileError()
-        except Exception as error:
-            # TODO: dig error context & info
-            raise ConfigContentError()
+        with open(Path(self.conf_uri).absolute(), "rb") as f:
+            try:
+                self._configuration = load(f)
+            except FileNotFoundError:
+                # TODO: dig error context & info
+                raise
+            except Exception:
+                # TODO: dig error context & info
+                raise
 
-    @property
-    def promisepool(self) -> dict:
-        return self._configuration[Evironments._PROMISEPOOl_]
-    
     @property
     def logging(self) -> dict:
         return self._configuration[Evironments._LOGGING_]
@@ -84,9 +79,33 @@ class Evironments(object):
         incld_dir = plugin_env[Evironments._PLUGIN_INCLUDES_]
 
         try:
-            for path in (f for f in Path(Path(self.conf_uri).parent, incld_dir).rglob('**/*') if f.is_file()):
-                profile = rtoml.load(path.absolute())
-                plugin_profiles.update(profile)
+
+            # for file_name in listdir(self.conf_uri):
+            #     if file_name.startswith(r'.') or (file_name.startswith(r'__') and file_name.endswith(r'__')):
+            #         continue
+
+            #     file_path = joinpath(xl_dir, file_name)
+            #     if isfile(file_path):
+            #         if is_xl_file(file_name):
+            #             with open(file_path, 'rb') as fd:
+            #                 yield fd, file_name
+            #         elif is_csv_file(file_path):
+            #             with open(file_path, 'rt', encoding='ansi') as fd:
+            #                 yield fd, file_name
+            #         elif is_zip_file(file_path):
+            #             yield from xls_in_zip(file_path)
+
+            #     elif isdir(file_path):
+            #         yield from xls_in_dir(file_path)
+
+            #     else:
+            #         print(f" {file_name} 不是 xl、zip文件或文件夹，已忽略。")
+            #         continue
+
+            for path in (f for f in Path(Path(self.conf_uri).parent, incld_dir).rglob('**/*.toml') if f.is_file()):
+                with open(path.absolute(), "rb") as f:
+                    profile = load(f)
+                    plugin_profiles.update(profile)
         except FileNotFoundError as error:
             raise ConfigFileError(f"Could not read Config file. {error}")
         except Exception as error:

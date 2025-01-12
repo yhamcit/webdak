@@ -26,12 +26,12 @@ more information, such as the ld(1) and ld.so(8) manual pages.
 
 
 py_x_sources =  [
-    "./pygcrypt.pyx"
+    "./webapps/modules/pygcrypt/pygcrypt.pyx"
 ]
 
-include_dirs = ["/opt/python/lib/libgpg/include/"]
+include_dirs = ["./webapps/c_libs/include/"]
 c_libraries = ["gcrypt"]
-library_dirs =["/opt/python/lib/libgpg/lib"]
+library_dirs =["./webapps/c_libs/lib"]
 
 exts = [Extension("pygcrypt", py_x_sources, include_dirs=include_dirs, libraries=c_libraries, library_dirs=library_dirs)]
 

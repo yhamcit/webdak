@@ -11,7 +11,6 @@ from webapps.modules.requests.httpsession import HttpSession
 from webapps.plugins.tplus.endpoints.auth.ticket import AppTicketEndpoints
 
 from webapps.model.auth.access.tic_tok_depot import SerializableObjectDepot
-from webapps.model.identifier import ModelIdentifier
 
 from webapps.plugins.tplus.model.auth.app_ticket import AppTicket
 from webapps.plugins.tplus.model.auth.app_token import AppToken
@@ -19,7 +18,6 @@ from webapps.plugins.tplus.model.dao.tplus_errors import AppTicketExpired, AppTi
 from webapps.plugins.tplus.model.properties.tplus_openapi_properties import TplusOpenApiProperties
 
 from webapps.modules.requests.dao.http_errors import HttpServerReject
-from webapps.modules.coroutinpromise.promisepool import PromisePool
 
 from webapps.modules.lumber.lumber import Lumber
 from webapps.modules.requests.httpcall import HttpCall

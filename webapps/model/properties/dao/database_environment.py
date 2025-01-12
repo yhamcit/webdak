@@ -69,10 +69,6 @@ class DatabaseProfile(object):
             # TODO : Handle exception
             raise ConfigContentError(error.args)
 
-    @property
-    def identifier(self) -> str:
-        return "&".join((self._type, self._name))
-
     @staticmethod
     def packurlresolved(addr_loc, scheme = "",path = "", params = {}, \
                         queries = {}, fragment = "", **kwargs) -> ParseResult:

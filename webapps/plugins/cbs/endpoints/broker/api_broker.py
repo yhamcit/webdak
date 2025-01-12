@@ -28,7 +28,6 @@ from webapps.plugins.cbs.model.dao.api_broker_request import CBSRestfulapiBroker
 from webapps.plugins.cbs.model.properties.cbs_endpoint_profile import CBSEndpointProfile
 from webapps.plugins.cbs.model.properties.cbs_openapi_properties import CBSOpenApiProperties
 
-from webapps.model.identifier import ModelIdentifier
 
 from webapps.modules.lumber.lumber import Lumber
 
@@ -116,15 +115,13 @@ class CBSRestfulapiBroker(PluginEndpoint):
         self._seri_obj_depot = SerializableObjectDepot()
         self._http_call_builder = HttpCallBuilder(props.base_url)
 
-        self._identifier = ModelIdentifier(props.plugin_qualifier, profile.endpoint_qualifier, self.url)
-
         self._cipherware = sm2(pub_key=props.public_cipher_key, prv_key=props.private_cipher_key)
 
         self._http_parser = decrypt_parser
 
     def get_token(self) -> AppToken:
         try:
-            app_token = AppToken(self._seri_obj_depot.get(self._identifier))
+            app_token = AppToken(self._seri_obj_depot.get(self.__class__.__name__))
 
             if not app_token.is_valid():
                 raise AppTokenExpired("App_Token expired", 
@@ -133,11 +130,11 @@ class CBSRestfulapiBroker(PluginEndpoint):
 
             return app_token
         except KeyError as error:
-            raise AppTokenInvalid(f"Token not exist", f"KeyError ID: {self._identifier}", error.args)
+            raise AppTokenInvalid(f"Token not exist", f"KeyError ID: {self.__class__.__name__}", error.args)
 
 
     def put_token(self, app_token) -> str:
-        return self._seri_obj_depot.put(app_token, self._identifier)
+        return self._seri_obj_depot.put(app_token, self.__class__.__name__)
 
 
     def signature(self, bin_content: bytes, asn1 :bool=False) -> str:

@@ -162,12 +162,20 @@ cython_debug/
 
 # config contents
 conf/
+.db_store/
+*.tar.gz
+
+logs/
+logs.*
+*.log
 
 # test/temporary 
 test/
 
 # binary files
 bin/
+c_libs/
+node_modules/
 
 # visual studio code
 .vscode
@@ -179,7 +187,9 @@ venv-py311/
 logrotate.d/
 nginx.d/
 ssh/
-startup.d/
+st
+
+.db_store/
 
 # Function-Specified resources
 resources/statics/CHANJET_CHECK.txt
