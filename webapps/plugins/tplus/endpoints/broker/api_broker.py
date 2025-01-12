@@ -3,6 +3,7 @@ import traceback
 from typing import Any
 
 
+from httpx import ConnectTimeout, ReadTimeout
 from quart import ResponseReturnValue, request as view_request
 from quart.views import View
 
@@ -70,6 +71,10 @@ class TplusOpenapiBroker(PluginEndpoint):
             try:
                 request = TplusRestfulapiBrokerRequest(await view_request.get_json())
                 return await self._endpoint.request(request.api_path, request.api_method, request.body)
+            except ReadTimeout as excp_err:
+                return f"Remote host network timeout: {excp_err.request}", 408
+            except ConnectTimeout as excp_err:
+                return f"Remote host connection timeout: {excp_err.request}", 408
             except (TplusException, AppTicketRejectedByServer, HttpServerReject) as exp_err:
                 return str(exp_err), 400
             except Exception as exp_err:
