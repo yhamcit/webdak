@@ -59,9 +59,10 @@ class TplusOpenapiBroker(PluginEndpoint):
 
         async def dispatch_request(self, **kwargs: Any) -> ResponseReturnValue:
 
+
             if not TplusRestfulapiBrokerRequest._REQUEST_HEADER_CONTENT_TYPE_ in view_request.headers:
                 return "A valid request must contain specified: 'Content-Type' as 'application/json'."
-
+            
             content_type = view_request.headers.get(TplusRestfulapiBrokerRequest._REQUEST_HEADER_CONTENT_TYPE_)
             if (content_type != HttpHeaderPod._HDV_MIME_JSON_):
                 return 'Content-Type not supported!'

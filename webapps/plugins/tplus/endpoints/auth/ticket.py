@@ -52,13 +52,13 @@ class AppTicketEndpoints(PluginEndpoint):
             self._waiting_clients = list()
 
         async def post(self, **kwargs: Any) -> ResponseReturnValue:
-            # cipher_msg = await request.get_json()
-            # valueset = AppTicketEndpoints().decrypt_msg(cipher_msg)
-            data = await request.get_data(as_text=True)
-            try:
-                valueset = json.loads(data)
-            except Exception as e:
-                pass
+            cipher_msg = await request.get_json()
+            valueset = AppTicketEndpoints().decrypt_msg(cipher_msg)
+            # data = await request.get_data(as_text=True)
+            # try:
+            #     valueset = json.loads(data)
+            # except Exception as e:
+            #     pass
 
             AppTicketEndpoints._timber.debug(valueset)
 
