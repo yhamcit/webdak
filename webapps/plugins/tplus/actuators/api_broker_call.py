@@ -1,23 +1,9 @@
 import httpx
 import json
 
-
-from quart import request
-from webapps.modules.plugin.endpoints import PluginEndpoint
-
-from webapps.modules.plugin.plugin_blueprint import PluginBlueprint
 from webapps.modules.requests.httpheaderpod import HttpHeaderPod
 from webapps.modules.requests.httpsession import HttpSession
-from webapps.plugins.tplus.endpoints.auth.ticket import AppTicketEndpoints
-
-from webapps.model.auth.access.tic_tok_depot import SerializableObjectDepot
-
-from webapps.plugins.tplus.model.auth.app_ticket import AppTicket
-from webapps.plugins.tplus.model.auth.app_token import AppToken
-from webapps.plugins.tplus.model.dao.tplus_errors import AppTicketExpired, AppTicketRejectedByServer, AppTicketRequestReject
 from webapps.plugins.tplus.model.properties.tplus_openapi_properties import TplusOpenApiProperties
-
-from webapps.modules.requests.dao.http_errors import HttpServerReject
 
 from webapps.modules.lumber.lumber import Lumber
 from webapps.modules.requests.httpcall import HttpCall

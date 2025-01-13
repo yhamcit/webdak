@@ -9,7 +9,6 @@ from urllib.parse import urlsplit
 from urllib.parse import urlencode
 from urllib.parse import parse_qs as urlsplit_qs
 from urllib.parse import urljoin
-from urllib.parse import quote
 from urllib.parse import SplitResult
 from webapps.model.properties.dao.env_errors import ConfigContentError
 

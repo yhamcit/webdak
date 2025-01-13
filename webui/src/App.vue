@@ -8,22 +8,6 @@ import NaviBarView from './components/NaviBarView.vue'
 <template>
   <header>
     <NaviBarView title="地方公共债务" des="省级行政区"></NaviBarView>
-
-    <!-- <div>
-      <div>
-        <v-select label="- 选择省 -"
-          :items="['California', 'Colorado', 'Florida', 'Georgia', 'Texas', 'Wyoming']"
-          ></v-select>
-          <v-select label="- 选择市 -"
-          :items="['California', 'Colorado', 'Florida', 'Georgia', 'Texas', 'Wyoming']"
-          ></v-select>
-      </div>
-      <nav>
-        <RouterLink to="/">地图</RouterLink>
-        <RouterLink to="/data">数据</RouterLink>
-      </nav>
-
-    </div> -->
   </header>
 
   <RouterView />

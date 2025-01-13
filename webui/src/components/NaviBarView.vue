@@ -9,27 +9,31 @@ defineProps({
     type: String,
     required: true,
   },
-  province: {
-    type: String,
-    required: true,
-  },
+  // des: {
+  //   type: String,
+  //   required: true,
+  // },
 })
 
-function onProvinceChange (selected_value) {
-  province = selected_value
-}
 
-function onCityChange (selected_value) {
-  province = selected_value
-}
+const provinces = ref([])
+const cities = ref([])
 
+const l1_dis_info = ref([])
+const l2_dis_info = ref([])
+const l3_dis_info = ref([])
+
+const province = ref('')
+const city = ref('')
+
+// var { province, city } = defineModel()
 async function getDistricts(region) {
   let params = new URLSearchParams({
       key: 'e28e8e04218b803aceeffed7d28fd9c9', 
       subdistrict: 1})
 
   if (region) {
-    params.append(keywords, "region")
+    params.append('keywords', region)
   }
 
   const info = await ky.get('https://restapi.amap.com/v3/config/district', 
@@ -39,21 +43,40 @@ async function getDistricts(region) {
   return info.districts
 }
 
-var provinces = ref([])
-var cities = ref(['A', 'B', 'C'])
 
-onMounted(async () => {
-  let tmpProvinces = []
-  const country = await getDistricts(null)
+async function onProvinceChange (selected_value) {
+  province.value = selected_value
 
-  console.log(country)
+  l2_dis_info.value = await updateDistricts(province.value)
 
-  for (let p of country.districts) {
-    tmpProvinces = tmpProvinces.concat(p.districts.map(p => p.name))
+  cities.value = l2_dis_info.value.map((d) => d.name)
+}
+
+async function onCityChange (selected_value) {
+  city.value = selected_value
+
+  l3_dis_info.value = await updateDistricts(city.value)
+}
+
+async function updateDistricts(upper_region) {
+
+  let tmpList = []
+  const districts = await getDistricts(upper_region)
+
+  console.log(districts)
+
+  for (let d of districts) {
+    tmpList = tmpList.concat(d.districts)
   }
 
-  console.log(tmpProvinces)
-  provinces.value = tmpProvinces
+  console.log(tmpList)
+  return tmpList
+}
+
+onMounted(async () => {
+  l1_dis_info.value = await updateDistricts(null)
+
+  provinces.value = l1_dis_info.value.map((d) => d.name)
   });
 
 </script>
@@ -64,7 +87,7 @@ onMounted(async () => {
   </div>
 
   <div class="wrapper">
-    <h3>{{ province }}</h3>
+    <h3>{{ `${province} ${city}` }}</h3>
 
     <div class="wrapper">
       <v-select label="- 选择省 -"
