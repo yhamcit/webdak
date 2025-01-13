@@ -39,7 +39,6 @@ async function getDistricts(region) {
   const info = await ky.get('https://restapi.amap.com/v3/config/district', 
     {searchParams: params}).json();
 
-  console.log(info)
   return info.districts
 }
 
@@ -77,7 +76,7 @@ onMounted(async () => {
   l1_dis_info.value = await updateDistricts(null)
 
   provinces.value = l1_dis_info.value.map((d) => d.name)
-  });
+});
 
 </script>
 

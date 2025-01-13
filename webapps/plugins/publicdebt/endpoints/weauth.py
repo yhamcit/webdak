@@ -3,13 +3,17 @@ from typing import Any
 from base64 import b64encode
 from os import urandom
 from random import randint, sample
+from hashlib import sha1, shake_256
 from time import timestamp
 
 import httpx
 from quart.views import View
 
+from quart import request as view_request
+
 from webapps.modules.plugin.endpoints import PluginEndpoint
 from webapps.modules.lumber.lumber import Lumber
+from webapps.modules.requests.httpheaderpod import HttpHeaderPod
 from webapps.plugins.publicdebt.model.dao.wecorp_acctoken import CorpWechatAccToken
 from webapps.plugins.publicdebt.model.dao.wecorp_jsapiticket import CorpWechatJSApiTicket
 from webapps.plugins.publicdebt.model.properties.debtquery import DebtQueryProfile, DebtQueryProperties
@@ -21,6 +25,8 @@ class CorpWeChatAuthorition(PluginEndpoint):
     _timber = Lumber.timber("wechat_authorition")
     _err_timber = Lumber.timber("error")
 
+    _REQUEST_HEADER_CONTENT_TYPE_ = "Content-Type"
+    __REQUEST_PARAM_URL__ = 'url'
 
     class AuthView(View):
 
@@ -32,8 +38,14 @@ class CorpWeChatAuthorition(PluginEndpoint):
 
         async def dispatch_request(self, **kwargs: Any) -> dict:
 
+            content_type = view_request.headers.get(CorpWeChatAuthorition._REQUEST_HEADER_CONTENT_TYPE_)
+            if (content_type != HttpHeaderPod._HDV_MIME_JSON_):
+                return 'Content-Type not supported!'
+
             try:
-                return await self._endpoint.request()      
+                request = await view_request.get_json()
+
+                return await self._endpoint.request(request[CorpWeChatAuthorition.__REQUEST_PARAM_URL__])
             except Exception as error:
                 return f"Request data can not be processed, reason: {error} - {str(error.args)}", 406
 
@@ -118,20 +130,28 @@ class CorpWeChatAuthorition(PluginEndpoint):
         # return ''.join([str(randint(0, 9)) for i in range(length)])
         # return str(randint(0, 100000000))
 
-        bin_chrs = b64encode(urandom(length * 2), altchars=b'-_')
-        nonce_lst = sample(tuple(bin_chrs.decode('utf-8')), length)
+
+        bincs = b64encode(urandom(length * 2), altchars=b'-_')
+        nonce_lst = sample(tuple(bincs.decode('utf-8')), length)
 
         return ''.join(nonce_lst)
 
 
-        
-        
 
-    async def request(self):
+    async def request(self, sig_url: str):
         json = dict()
+
         json['jsapi_tic'] = await self.get_jsapi_ticket()
         json['nonce'] = CorpWeChatAuthorition.generate_nonce(16)
         json['timestamp'] = str(int(timestamp()))
+        json['url'] = sig_url
+
+        str_to_sign = '&'.join('='.join((k, v)) for k, v in json.items())
+        sha1_alg = sha1()
+        sha1_alg.update(str_to_sign.encode('utf-8'))
+        json['signature'] = sha1_alg.hexdigest()
+
+        json['nonceStr'] = json.pop('nonce')
 
         return json.dumps(json)
 
