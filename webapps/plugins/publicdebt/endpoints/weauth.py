@@ -1,13 +1,15 @@
 from typing import Any
 
+from base64 import b64encode
+from os import urandom
+from random import randint, sample
+from time import timestamp
+
 import httpx
-from quart import ResponseReturnValue, request as view_request
 from quart.views import View
 
 from webapps.modules.plugin.endpoints import PluginEndpoint
 from webapps.modules.lumber.lumber import Lumber
-from webapps.modules.requests.httpheaderpod import HttpHeaderPod
-from webapps.plugins.publicdebt.model.dao.debtquery_request import DebtQueryRequest
 from webapps.plugins.publicdebt.model.dao.wecorp_acctoken import CorpWechatAccToken
 from webapps.plugins.publicdebt.model.dao.wecorp_jsapiticket import CorpWechatJSApiTicket
 from webapps.plugins.publicdebt.model.properties.debtquery import DebtQueryProfile, DebtQueryProperties
@@ -28,7 +30,7 @@ class CorpWeChatAuthorition(PluginEndpoint):
             super().__init__()
             self._endpoint = endpoint
 
-        async def dispatch_request(self, **kwargs: Any) -> ResponseReturnValue:
+        async def dispatch_request(self, **kwargs: Any) -> dict:
 
             try:
                 return await self._endpoint.request()      
@@ -108,13 +110,29 @@ class CorpWeChatAuthorition(PluginEndpoint):
                 self._jsapi_ticket = jsapi_tic
 
         return self._jsapi_ticket.ticket
+
+
+    @staticmethod
+    def generate_nonce(length=16):
+        """Generate pseudorandom number."""
+        # return ''.join([str(randint(0, 9)) for i in range(length)])
+        # return str(randint(0, 100000000))
+
+        bin_chrs = b64encode(urandom(length * 2), altchars=b'-_')
+        nonce_lst = sample(tuple(bin_chrs.decode('utf-8')), length)
+
+        return ''.join(nonce_lst)
+
+
         
         
 
     async def request(self):
+        json = dict()
+        json['jsapi_tic'] = await self.get_jsapi_ticket()
+        json['nonce'] = CorpWeChatAuthorition.generate_nonce(16)
+        json['timestamp'] = str(int(timestamp()))
 
-        jsapi_tic = await self.get_jsapi_ticket()
-
-        return jsapi_tic
+        return json.dumps(json)
 
  
