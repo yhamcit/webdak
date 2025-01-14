@@ -4,7 +4,8 @@ from base64 import b64encode
 from os import urandom
 from random import randint, sample
 from hashlib import sha1, shake_256
-from time import timestamp
+from time import time as  timestamp
+from json import dumps
 
 import httpx
 from quart.views import View
@@ -73,8 +74,8 @@ class CorpWeChatAuthorition(PluginEndpoint):
             self._acc_token = None
 
             corpid = 'wwd2c8180973870229'
-            agentid = '1000003'   # 资产平台 Agent ID，其它应用认证时需要替换
-            appsecret = 'zX92jFULaLDcL2NNggUiSvlA8hJUPRmBO-FCylwlqik'   # 资产平台 secret，其它应用认证时需要替换
+            agentid = '1000017'   # 资产平台 Agent ID，其它应用认证时需要替换
+            appsecret = 's0l5xxaXSRAOccOZ0wsaF_AkrXvTuRQvREBhfkuTBX8'   # 资产平台 secret，其它应用认证时需要替换
 
             params = {'corpid': corpid, 'corpsecret': appsecret}
             async with httpx.AsyncClient() as client:
@@ -153,6 +154,6 @@ class CorpWeChatAuthorition(PluginEndpoint):
 
         json['nonceStr'] = json.pop('nonce')
 
-        return json.dumps(json)
+        return dumps(json)
 
  
