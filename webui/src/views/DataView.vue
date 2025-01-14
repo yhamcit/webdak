@@ -22,7 +22,14 @@ onMounted(async () => {
   // }
 
   const auth_params = await ky.post('https://web.cdyhamc.com/endpoints/publicdebt/corpwechat', 
-    {json: {url: url.split('#')[0]}}).json();
+    {
+      headers: {
+        'Origin': 'https://web.cdyhamc.com:9051'
+      },
+      son: {
+        url: url.split('#')[0]
+      }
+    }).json();
 
   return info.districts
 });
