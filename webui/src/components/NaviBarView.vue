@@ -68,7 +68,6 @@ async function updateDistricts(upper_region) {
     tmpList = tmpList.concat(d.districts)
   }
 
-  console.log(tmpList)
   return tmpList
 }
 
