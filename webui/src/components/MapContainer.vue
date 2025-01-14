@@ -6,8 +6,6 @@ import { onMounted, onUnmounted } from "vue";
 import AMapLoader from '@amap/amap-jsapi-loader';
 
 onMounted(() => {
-  console.log(" === 开始加载地图 ===")
-
   window._AMapSecurityConfig = {securityJsCode: "cf5dba8895ae3f072aa48bc8be4c0db3",};
 
   AMapLoader.load({
