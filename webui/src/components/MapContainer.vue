@@ -21,15 +21,7 @@ onMounted(() => {
     }
   })
     .then((AMap) => {
-      // map = new AMap.Map("container", {
-      //   viewMode: "3D",
-      //   zoom: 11,
-      //   center: [116.397428, 39.90923], 
-      //   rotateEnable: false,
-      //   mapStyle: 'amap://styles/45311ae996a8bea0da10ad5151f72979'
-      // });
-
-      init_map()
+      init_map(AMap)
     })
     .catch((e) => {
       console.log(e);
@@ -40,7 +32,7 @@ onUnmounted(() => {
   map.destroy();
 });
 
-function init_map (params) {
+function init_map (AMap) {
 
   window.movingDraw = true;
   var colors = {};
@@ -90,8 +82,16 @@ function init_map (params) {
     }
   });
 
+  // var map = new AMap.Map("container", {
+  //   viewMode: "3D",
+  //   zoom: 11,
+  //   center: [116.397428, 39.90923], 
+  //   rotateEnable: false,
+  //   mapStyle: 'amap://styles/45311ae996a8bea0da10ad5151f72979'
+  // });
+
   var map = new AMap.Map('map', {
-    zoom: 5.6,
+    zoom: 5,
     showLabel: false,
     viewMode: '3D',
     visible: false,

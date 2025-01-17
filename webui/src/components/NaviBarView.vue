@@ -102,6 +102,13 @@ onMounted(async () => {
       </v-select>
     </div>
 
+    <div class="input-card" style="width: auto;">
+      <div class="input-item">
+        <button id="top-layer-btn" class="btn">回顶层</button>
+        <button id="upper-layer-btn" class="btn">回上层</button>
+      </div>
+    </div>
+
     <nav>
       <RouterLink to="/">地图</RouterLink>
       <RouterLink to="/data">数据</RouterLink>
@@ -194,6 +201,135 @@ nav a:first-of-type {
     place-items: center;
     width: 100%;
   }
+
+  .btn {
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    border: 1px solid transparent;
+    transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    background-color: transparent;
+    background-image: none;
+    color: #25A5F7;
+    border-color: #25A5F7;
+    padding: .25rem .5rem;
+    line-height: 1.5;
+    border-radius: 1rem;
+    -webkit-appearance: button;
+    cursor:pointer;
+  }
+
+  .btn:hover {
+    color: #fff;
+    background-color: #25A5F7;
+    border-color: #25A5F7
+  }
+
+  .btn:hover {
+    text-decoration: none
+  }
+
+  .input-item {
+    position: relative;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -ms-flex-align: center;
+    align-items: center;
+    width: 100%;
+    height: 3rem;
+  }
+
+  .input-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .input-item>select, .input-item>input[type=text], .input-item>input[type=date] {
+    position: relative;
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+    width: 1%;
+    margin-bottom: 0;
+  }
+
+  .input-item>select:not(:last-child), .input-item>input[type=text]:not(:last-child), .input-item>input[type=date]:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0
+  }
+
+  .input-item>select:not(:first-child), .input-item>input[type=text]:not(:first-child), .input-item>input[type=date]:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0
+  }
+
+  .input-item-prepend {
+    margin-right: -1px;
+  }
+
+  .input-item-text, input[type=text],input[type=date], select {
+    height: calc(2.2rem + 2px);
+  }
+
+  .input-item-text {
+    width: 6rem;
+    text-align: justify;
+    padding: 0.4rem 0.7rem;
+    display: inline-block;
+    text-justify: distribute-all-lines;
+    /*ie6-8*/
+    text-align-last: justify;
+    /* ie9*/
+    -moz-text-align-last: justify;
+    /*ff*/
+    -webkit-text-align-last: justify;
+    /*chrome 20+*/
+    -ms-flex-align: center;
+    align-items: center;
+    margin-bottom: 0;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #495057;
+    text-align: center;
+    white-space: nowrap;
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .input-item-text input[type=checkbox], .input-item-text input[type=radio] {
+    margin-top: 0
+  }
+
+  .input-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    word-wrap: break-word;
+    background-color: #fff;
+    background-clip: border-box;
+    border-radius: .25rem;
+    width: 22rem;
+    border-width: 0;
+    border-radius: 0.4rem;
+    box-shadow: 0 2px 6px 0 rgba(114, 124, 245, .5);
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+    padding: 0.75rem 1.25rem;
+  }
+
 
 }
 </style>
