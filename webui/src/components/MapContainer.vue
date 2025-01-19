@@ -5,8 +5,18 @@
 import { onMounted, onUnmounted } from "vue";
 import AMapLoader from '@amap/amap-jsapi-loader';
 
+const { province, metropolis } = defineProps(['province', 'metropolis'])
+
+const emit = defineEmits(['change_province', 'change_metropolis'])
+
 onMounted(() => {
   window._AMapSecurityConfig = {securityJsCode: "cf5dba8895ae3f072aa48bc8be4c0db3",};
+
+
+  var geo = new Loca.GeoJSONSource({
+    url: 'https://a.amap.com/Loca/static/loca-v2/demos/mock_data/gdp.json',
+  });
+
 
   AMapLoader.load({
     key: "33300d9b8a904f22b218486056876efa",
@@ -21,7 +31,7 @@ onMounted(() => {
     }
   })
     .then((AMap) => {
-      init_map(AMap)
+      initAMap(AMap, geo)
     })
     .catch((e) => {
       console.log(e);
@@ -32,7 +42,75 @@ onUnmounted(() => {
   map.destroy();
 });
 
-function init_map (AMap) {
+
+function initPrismLayer(source) {
+  var pl = new Loca.PrismLayer({
+    zIndex: 10,
+    opacity: 0.8,
+    visible: false,
+    hasSide: true,
+  });
+
+  pl.setSource(source);
+
+  pl.setStyle({
+    unit: 'meter',
+    sideNumber: 4,
+    topColor: (index, f) => {
+      var n = f.properties['GDP'];
+      return n > 7000 ? '#E97091' : '#2852F1';
+    },
+    sideTopColor: (index, f) => {
+      var n = f.properties['GDP'];
+      return n > 7000 ? '#E97091' : '#2852F1';
+    },
+    sideBottomColor: '#002bb9',
+    radius: 15000,
+    height: (index, f) => {
+      var props = f.properties;
+      var height = Math.max(100, Math.sqrt(props['GDP']) * 9000 - 50000);
+      return height;
+    },
+    rotation: 360,
+    altitude: 0,
+  });
+  loca.add(pl)
+
+  return pl;
+}
+
+
+function initLoca(map) {
+
+  var loca = new Loca.Container({
+    map,
+  });
+
+  loca.ambLight = {
+    intensity: 0.7,
+    color: '#7b7bff',
+    // color: 'lightsteelblue',
+  };
+
+  loca.dirLight = {
+    intensity: 0.8,
+    color: '#fff',
+    // color: 'lightsteelblue',
+    target: [0, 0, 0],
+    position: [0, -1, 1],
+  };
+
+  loca.pointLight = {
+    color: 'rgb(240,88,25)',
+    position: [112.028276, 31.58538, 2000000],
+    intensity: 3,
+    // 距离表示从光源到光照强度为 0 的位置，0 就是光不会消失。
+    distance: 5000000,
+  };
+}
+
+
+function initAMap(AMap, dataSrc) {
 
   window.movingDraw = true;
   var colors = {};
@@ -61,35 +139,6 @@ function init_map (AMap) {
       }
     })
 
-  var disProvince = new AMap.DistrictLayer.Province({
-    zIndex: 6,
-    opacity: 0.6,
-    adcode: '510000',
-    depth: 1,
-    styles: {
-      'fill': function (properties) {
-        // properties为可用于做样式映射的字段，包含
-        // NAME_CHN:中文名称
-        // adcode_pro
-        // adcode_cit
-        // adcode
-        var adcode = properties.adcode;
-        return getColorByAdcode(adcode);
-      },
-      'province-stroke': 'cornflowerblue',
-      'city-stroke': 'white', // 中国地级市边界
-      'county-stroke': 'rgba(255,255,255,0.5)' // 中国区县边界
-    }
-  });
-
-  // var map = new AMap.Map("container", {
-  //   viewMode: "3D",
-  //   zoom: 11,
-  //   center: [116.397428, 39.90923], 
-  //   rotateEnable: false,
-  //   mapStyle: 'amap://styles/45311ae996a8bea0da10ad5151f72979'
-  // });
-
   var map = new AMap.Map('map', {
     zoom: 5,
     showLabel: false,
@@ -100,76 +149,21 @@ function init_map (AMap) {
     center: [108.940174, 34.341568],
     rotateEnable: false,
     layers: [
-      disProvince,
+      // disProvince,
       disCountry,
     ],
     mapStyle: 'amap://styles/dark'
   });
 
-  var loca = new Loca.Container({
-    map,
-  });
-
-  loca.ambLight = {
-    intensity: 0.7,
-    color: '#7b7bff',
-    // color: 'lightsteelblue',
-  };
-
-  loca.dirLight = {
-    intensity: 0.8,
-    color: '#fff',
-    // color: 'lightsteelblue',
-    target: [0, 0, 0],
-    position: [0, -1, 1],
-  };
-
-  loca.pointLight = {
-    color: 'rgb(240,88,25)',
-    position: [112.028276, 31.58538, 2000000],
-    intensity: 3,
-    // 距离表示从光源到光照强度为 0 的位置，0 就是光不会消失。
-    distance: 5000000,
-  };
-
-  var pl = new Loca.PrismLayer({
-    zIndex: 10,
-    opacity: 0.8,
-    visible: false,
-    hasSide: true,
-  });
-
-  var geo = new Loca.GeoJSONSource({
-    url: 'https://a.amap.com/Loca/static/loca-v2/demos/mock_data/gdp.json',
-  });
-  pl.setSource(geo);
-
-  pl.setStyle({
-    unit: 'meter',
-    sideNumber: 4,
-    topColor: (index, f) => {
-      var n = f.properties['GDP'];
-      return n > 7000 ? '#E97091' : '#2852F1';
-    },
-    sideTopColor: (index, f) => {
-      var n = f.properties['GDP'];
-      return n > 7000 ? '#E97091' : '#2852F1';
-    },
-    sideBottomColor: '#002bb9',
-    radius: 15000,
-    height: (index, f) => {
-      var props = f.properties;
-      var height = Math.max(100, Math.sqrt(props['GDP']) * 9000 - 50000);
-      return height;
-    },
-    rotation: 360,
-    altitude: 0,
-  });
-  loca.add(pl)
+  initLoca();
+  var pl = initPrismLayer(dataSrc);
 
   map.on('complete', function () {
     setTimeout(function () {
       pl.show(500);
+
+      loca.animate.start();
+
       pl.addAnimate({
         key: 'height',
         value: [0, 1],
@@ -179,52 +173,93 @@ function init_map (AMap) {
         random: true,
         delay: 8000,
       });
-      // pl.addAnimate({
-      //   key: 'rotation',
-      //   value: [0, 1],
-      //   duration: 500,
-      //   easing: 'Linear',
-      //   transform: 2000,
-      //   random: true,
-      //   delay: 8000,
-      // });
     }, 
     800);
   });
-  loca.animate.start();
 
-  // var dat = new Loca.Dat();
-  // dat.addLayer(pl, 'GDP');
-  // dat.addLight(loca.ambLight, loca, '环境光');
-  // dat.addLight(loca.dirLight, loca, '平行光');
-  // dat.addLight(loca.pointLight, loca, '点光');
-
-  // 事件处理
-  var clickInfo = new AMap.Marker({
-    anchor: 'bottom-center',
-    position: [116.396923, 39.918203, 0],
-  });
-  clickInfo.setMap(map);
-  clickInfo.hide();
-  // 鼠标事件
   map.on('mousemove', function (e) {
     var feat = pl.queryFeature(e.pixel.toArray());
     if (feat) {
-      clickInfo.show();
-      // var props = feat.properties;
-      // var height = Math.max(100, Math.sqrt(props['GDP']) * 9000 - 50000);
-      // clickInfo.setPosition([feat.coordinates[0], feat.coordinates[1], height]);
-      // clickInfo.setContent(
-      //   '<div style="text-align: center; height: 20px; width: 150px; color:#fff; font-size: 14px;">' +
-      //   feat.properties['名称'] + ': ' + feat.properties['GDP'] +
-      //   ' 元</div>'
-      // );
+      // clickInfo.show();
     } else {
-      clickInfo.hide();
+      // clickInfo.hide();
+    }
+  });
+
+  map.on('click', function (ev) {
+      var px = ev.pixel;
+
+      var props = disCountry.getDistrictByContainerPos(px);
+      if (props) {
+        province.value = props
+      }
+
+
+      // if (props) {
+      // var SOC = props.SOC;
+      // if(SOC){
+      //     // 重置行政区样式
+      //     disWorld.setStyles({
+      //         // 国境线
+      //         //nation-stroke': nationStroke,
+      //         // 海岸线
+      //         //'coastline-stroke': '',
+      //         'fill': function (props) {
+      //             return props.SOC == SOC ? nationFill : 'white';
+      //         }
+      //     });
+      //     updateInfo(props);
+      // }
+  });
+
+}
+
+
+function switchToProvince(map, targetProv) {
+
+  var disProvince = new AMap.DistrictLayer.Province({
+    zIndex: 6,
+    opacity: 0.6,
+    adcode: targetProv.adcode_pro,
+    depth: 1,
+    styles: {
+      'fill': function (properties) {
+        var adcode = properties.adcode;
+        return getColorByAdcode(adcode);
+      },
+      'province-stroke': 'cornflowerblue',
+      'city-stroke': 'white', // 中国地级市边界
+      'county-stroke': 'rgba(255,255,255,0.5)' // 中国区县边界
     }
   });
 
 }
+
+function zoomInProvice(bg, fg, targetProv) {
+  bg.hide(1200)
+  loca.viewControl.addAnimates([
+      {
+        center: {
+          value: [targetProv.x, targetProv.y],
+          // control: [[121.424503326416, 1.199146851153124], 
+          //           [121.46656036376952, 31.245828642661486]],
+          timing: [0.3, 0, 0.1, 1],
+          duration: 800,
+        },
+        zoom: {
+          value: 9,
+          control: [[0.3, 5], [1, 9]],
+          timing: [0.3, 0, 0.7, 1],
+          duration: 800,
+        },
+      }], function () {
+        fg.show(1000);
+        setTimeout(animate, 100);
+        console.log('结束');
+    });
+
+}
+
 
 </script>
 
