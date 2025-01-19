@@ -5,17 +5,15 @@
 import { onMounted, onUnmounted } from "vue";
 import AMapLoader from '@amap/amap-jsapi-loader';
 
-const { province, metropolis } = defineProps(['province', 'metropolis'])
+const props = defineProps(['province', 'metropolis'])
 
 const emit = defineEmits(['change_province', 'change_metropolis'])
 
+var loca = undefined;
+var provinceLayer = undefined;
+
 onMounted(() => {
   window._AMapSecurityConfig = {securityJsCode: "cf5dba8895ae3f072aa48bc8be4c0db3",};
-
-
-  var geo = new Loca.GeoJSONSource({
-    url: 'https://a.amap.com/Loca/static/loca-v2/demos/mock_data/gdp.json',
-  });
 
 
   AMapLoader.load({
@@ -31,7 +29,7 @@ onMounted(() => {
     }
   })
     .then((AMap) => {
-      initAMap(AMap, geo)
+      initAMap(AMap)
     })
     .catch((e) => {
       console.log(e);
@@ -43,7 +41,36 @@ onUnmounted(() => {
 });
 
 
-function initPrismLayer(source) {
+function createPrismLayer(map) {
+  loca = new Loca.Container({
+    map,
+  });
+
+  var geo = new Loca.GeoJSONSource({
+    url: 'https://a.amap.com/Loca/static/loca-v2/demos/mock_data/gdp.json',
+  });
+
+  loca.ambLight = {
+    intensity: 0.7,
+    color: '#7b7bff',
+    // color: 'lightsteelblue',
+  };
+
+  loca.dirLight = {
+    intensity: 0.8,
+    color: '#fff',
+    // color: 'lightsteelblue',
+    target: [0, 0, 0],
+    position: [0, -1, 1],
+  };
+
+  loca.pointLight = {
+    color: 'rgb(240,88,25)',
+    position: [112.028276, 31.58538, 2000000],
+    intensity: 3,
+    distance: 5000000,
+  };
+
   var pl = new Loca.PrismLayer({
     zIndex: 10,
     opacity: 0.8,
@@ -51,7 +78,7 @@ function initPrismLayer(source) {
     hasSide: true,
   });
 
-  pl.setSource(source);
+  pl.setSource(geo);
 
   pl.setStyle({
     unit: 'meter',
@@ -80,37 +107,8 @@ function initPrismLayer(source) {
 }
 
 
-function initLoca(map) {
 
-  var loca = new Loca.Container({
-    map,
-  });
-
-  loca.ambLight = {
-    intensity: 0.7,
-    color: '#7b7bff',
-    // color: 'lightsteelblue',
-  };
-
-  loca.dirLight = {
-    intensity: 0.8,
-    color: '#fff',
-    // color: 'lightsteelblue',
-    target: [0, 0, 0],
-    position: [0, -1, 1],
-  };
-
-  loca.pointLight = {
-    color: 'rgb(240,88,25)',
-    position: [112.028276, 31.58538, 2000000],
-    intensity: 3,
-    // 距离表示从光源到光照强度为 0 的位置，0 就是光不会消失。
-    distance: 5000000,
-  };
-}
-
-
-function initAMap(AMap, dataSrc) {
+function initAMap(AMap) {
 
   window.movingDraw = true;
   var colors = {};
@@ -123,7 +121,7 @@ function initAMap(AMap, dataSrc) {
     return colors[adcode];
   };
 
-  var disCountry = new AMap.DistrictLayer.Country({
+  var countryLayer = new AMap.DistrictLayer.Country({
       zIndex: 2,
       opacity: 0.6, 
       SOC: 'CHN',
@@ -150,19 +148,16 @@ function initAMap(AMap, dataSrc) {
     rotateEnable: false,
     layers: [
       // disProvince,
-      disCountry,
+      countryLayer,
     ],
     mapStyle: 'amap://styles/dark'
   });
 
-  initLoca();
-  var pl = initPrismLayer(dataSrc);
+  var pl = createPrismLayer(map);
 
   map.on('complete', function () {
     setTimeout(function () {
       pl.show(500);
-
-      loca.animate.start();
 
       pl.addAnimate({
         key: 'height',
@@ -189,9 +184,15 @@ function initAMap(AMap, dataSrc) {
   map.on('click', function (ev) {
       var px = ev.pixel;
 
-      var props = disCountry.getDistrictByContainerPos(px);
+      var props = countryLayer.getDistrictByContainerPos(px);
       if (props) {
-        province.value = props
+        if (typeof props.province !== 'undefined' && props.province) {
+          props.province = undefined;
+        } else {
+          provinceLayer = putProvinceLayerOntop(map, props)
+          zoomInProvice(pl, provinceLayer, countryLayer, props)
+          province.value = props
+        }
       }
 
 
@@ -212,12 +213,14 @@ function initAMap(AMap, dataSrc) {
       // }
   });
 
+
+  // loca.animate.start();
 }
 
 
-function switchToProvince(map, targetProv) {
+function putProvinceLayerOntop(map, targetProv) {
 
-  var disProvince = new AMap.DistrictLayer.Province({
+  var fg = new AMap.DistrictLayer.Province({
     zIndex: 6,
     opacity: 0.6,
     adcode: targetProv.adcode_pro,
@@ -233,12 +236,16 @@ function switchToProvince(map, targetProv) {
     }
   });
 
+  fg.setMap(map);
+
+  return fg
 }
 
-function zoomInProvice(bg, fg, targetProv) {
+function zoomInProvice(top, bg, fg, targetProv) {
+  top.hide(600)
   bg.hide(1200)
-  loca.viewControl.addAnimates([
-      {
+  loca.viewControl.addAnimates(
+    [{
         center: {
           value: [targetProv.x, targetProv.y],
           // control: [[121.424503326416, 1.199146851153124], 
@@ -251,10 +258,12 @@ function zoomInProvice(bg, fg, targetProv) {
           control: [[0.3, 5], [1, 9]],
           timing: [0.3, 0, 0.7, 1],
           duration: 800,
-        },
-      }], function () {
+        }
+      }], 
+    function () {
         fg.show(1000);
-        setTimeout(animate, 100);
+
+        setTimeout((top) => top.show(800), 100);
         console.log('结束');
     });
 
