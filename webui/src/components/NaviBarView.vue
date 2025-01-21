@@ -1,7 +1,8 @@
 <script setup>
 
 import { ref, onMounted } from 'vue';
-import ky from 'ky'
+
+const selectedRegion = defineModel()
 
 
 defineProps({
@@ -16,66 +17,9 @@ defineProps({
 })
 
 
-const provinces = ref([])
-const cities = ref([])
-
-const l1_dis_info = ref([])
-const l2_dis_info = ref([])
-const l3_dis_info = ref([])
-
 const province = ref('')
 const city = ref('')
 
-// var { province, city } = defineModel()
-async function getDistricts(region) {
-  let params = new URLSearchParams({
-      key: 'e28e8e04218b803aceeffed7d28fd9c9', 
-      subdistrict: 1})
-
-  if (region) {
-    params.append('keywords', region)
-  }
-
-  const info = await ky.get('https://restapi.amap.com/v3/config/district', 
-    {searchParams: params}).json();
-
-  return info.districts
-}
-
-
-async function onProvinceChange (selected_value) {
-  province.value = selected_value
-
-  l2_dis_info.value = await updateDistricts(province.value)
-
-  cities.value = l2_dis_info.value.map((d) => d.name)
-}
-
-async function onCityChange (selected_value) {
-  city.value = selected_value
-
-  l3_dis_info.value = await updateDistricts(city.value)
-}
-
-async function updateDistricts(upper_region) {
-
-  let tmpList = []
-  const districts = await getDistricts(upper_region)
-
-  console.log(districts)
-
-  for (let d of districts) {
-    tmpList = tmpList.concat(d.districts)
-  }
-
-  return tmpList
-}
-
-onMounted(async () => {
-  l1_dis_info.value = await updateDistricts(null)
-
-  provinces.value = l1_dis_info.value.map((d) => d.name)
-});
 
 </script>
 
@@ -89,7 +33,7 @@ onMounted(async () => {
 
     <div class="wrapper">
       <v-select label="- 选择省 -"
-        v-model="province"
+        v-model="selectedRegion"
         :items="provinces"
         @update:model-value="onProvinceChange"
         >

@@ -1,12 +1,12 @@
 <script setup>
-import MapContainer from '@/components/MapContainer.vue';
 
+import MapContainer from '@/components/MapContainer.vue';
 
 </script>
 
 <template>
   <main>
-    <MapContainer />
+    <MapContainer/>
   </main>
 </template>
 
