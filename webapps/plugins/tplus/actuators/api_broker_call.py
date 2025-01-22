@@ -39,6 +39,8 @@ class TplusOpenapiBrokerHttpCall(HttpCall):
             if response.status_code != httpx.codes.OK:
                 TplusOpenapiBrokerHttpCall._timber.error(f"Upstream server rejection: status code: {response.status_code} response details: \n {response.text}")
 
+            TplusOpenapiBrokerHttpCall._timber.error(f"server reply: \n {response.status_code} \n {response.text}")
+
             return response.text, response.status_code
         except Exception as error:
             TplusOpenapiBrokerHttpCall._timber.error(f"TplusOpenapiBrokerHttpCall: {error}")

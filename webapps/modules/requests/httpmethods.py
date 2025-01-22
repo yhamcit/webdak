@@ -82,8 +82,8 @@ class HttpMethods(object):
 
             return urljoin(http_call.base_url, relative_url)
 
-        except Exception as excp_err:
-            raise HttpInvalidUrl(excp_err)
+        except Exception as err:
+            raise HttpInvalidUrl(err)
         
     @staticmethod
     def inflate_session_headers(http_call: HttpCall, header_filter: tuple, cust_headers: dict) -> dict:
@@ -91,8 +91,8 @@ class HttpMethods(object):
         try:
             headers = http_call.http_session.supplement_headers(cust_headers)
             return dict({key: headers[key] for key in header_filter})
-        except KeyError as excp_err:
-            raise ConfigContentError(excp_err)
+        except KeyError as err:
+            raise ConfigContentError(err)
 
 
     @staticmethod
@@ -112,14 +112,18 @@ class HttpMethods(object):
 
                 return func(http_call, response, session)
 
-            except TplusException as excp_err:
-                HttpMethods._timber.critical(f"Unexpected exception: {str(excp_err)}")
-            except ReadTimeout as excp_err:
-                HttpMethods._timber.critical(f"Network timeout: {excp_err.request}")
-            except ConnectTimeout as excp_err:
-                HttpMethods._timber.critical(f"Connection timeout: {excp_err.request}")
-            except Exception as excp_err:
-                HttpMethods._timber.critical(f"Unexpected exception: {str(excp_err)}")
+            except TplusException as err:
+                HttpMethods._timber.critical(f"Tplus exception: {err.args}")
+                return f"Tplus exception: {err.args}", 503
+            except ReadTimeout as err:
+                HttpMethods._timber.critical(f"Network timeout: {err.args}")
+            except ConnectTimeout as err:
+                HttpMethods._timber.critical(f"Connection timeout: {err.request}")
+            except Exception as err:
+                HttpMethods._timber.critical(f"Unexpected exception: {err.args}")
+                return f"Unexpected exception: {err.args}", 500
+
+            return f"Transport exception: {err.args}", 502
 
     @staticmethod
     def raise_on_4xx_5xx(response):

@@ -1,22 +1,28 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
+import { ref, watch, onMounted  } from 'vue'
 import NaviBarView from './components/NaviBarView.vue'
 import ky from 'ky'
 
 
 const cached = ref({
-  l1_dis_info: [],
-  l2_dis_info: [],
-  l3_dis_info: []
+  l1: [],
+  l2: [],
+  l3: [],
 })
 
-const selectedRegion = ref({
-  province: {name: undefined, adcode: '', x: null, y, metric: 0},
-  metropolis: {name: undefined, adcode: '', x: null, y, metric: 0},
+const uiModel = ref({
+  title: '地方公共债务数据',
+  province: '',
+  metropolis: '', 
+  l1: ['A', 'B', 'C'],
+  l2: ['1', '2', '3'],
 })
 
-watch(selectedRegion, () => console.log(selectedRegion))
-
+const activeRegion = ref({
+  province: {name: '', adcode: '', x: null, y: null, metric: 0},
+  metropolis: {name: '', adcode: '', x: null, y: null, metric: 0},
+})
 
 
 async function updateGeoData(upper_region) {
@@ -44,29 +50,38 @@ async function updateGeoData(upper_region) {
 async function onProvinceChange (selected_value) {
   province.value = selected_value
 
-  cached.value.l2_dis_info = await updateGeoData(province.value)
+  cached.l2 = await updateGeoData(province.value)
 
-  cities.value = cached.value.l2_dis_info.map((d) => d.name)
+  uiModel.l2 = cached.value.l2_dis_info.map((d) => d.name)
 }
 
 async function onCityChange (selected_value) {
   city.value = selected_value
 
-  cached.value.l3_dis_info = await updateGeoData(city.value)
+  cached.l3 = await updateGeoData(city.value)
 }
 
-onMounted(async () => {
-  cached.value.l1_dis_info = await updateGeoData(null)
+// onMounted(async () => {
+//   cached.l1 = await updateGeoData(null)
 
-  provinces.value = cached.value.l1_dis_info.map((d) => d.name)
-});
+//   uiModel.l1 = cached.l1.map((d) => d.name)
+// });
+
+
+async function onUiReady () {
+  cached.l1 = await updateGeoData(null)
+
+  uiModel.value.l1 = cached.l1.map((d) => d.name)
+
+  uiModel.value.province = "全国"
+}
 
 
 </script>
 
 <template>
   <header>
-    <NaviBarView title="地方公共债务" v-model="selectedRegion.province + selectedRegion.metropolis"></NaviBarView>
+    <NaviBarView :title="uiModel.title" v-bind="uiModel" :l2="uiModel.l2" @ui-ready="onUiReady"></NaviBarView>
   </header>
 
   <RouterView />
