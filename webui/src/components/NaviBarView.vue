@@ -36,7 +36,6 @@ const props = defineProps({
       <v-select label="- 选择省 -"
         v-model="province"
         :items="l1"
-        @click="$emit('selProvince')"
         >
       </v-select>
       <v-select label="- 选择市 -"

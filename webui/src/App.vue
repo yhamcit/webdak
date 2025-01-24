@@ -24,6 +24,9 @@ const activeRegion = ref({
   metropolis: {name: '', adcode: '', x: null, y: null, metric: 0},
 })
 
+watch(uiModel.province, () => {
+  console.log("  province changed.  ")
+})
 
 async function updateGeoData(upper_region) {
 
@@ -69,9 +72,14 @@ async function onCityChange (selected_value) {
 
 
 async function onUiReady () {
-  cached.l1 = await updateGeoData(null)
+  var lst = await updateGeoData(null)
 
-  uiModel.value.l1 = cached.l1.map((d) => d.name)
+  // cache 
+  cached.value.l1.splice(0, cached.value.l1.length, ...lst)
+  // cached.value.l1.concat(lst)
+  // update ui selections
+  uiModel.value.l1.splice(0, uiModel.value.l1.length, ...lst.map((d) => d.name))
+  // uiModel.value.l1.concat(lst.map((d) => d.name))
 
   uiModel.value.province = "全国"
 }
@@ -81,7 +89,7 @@ async function onUiReady () {
 
 <template>
   <header>
-    <NaviBarView :title="uiModel.title" v-bind="uiModel" :l2="uiModel.l2" @ui-ready="onUiReady"></NaviBarView>
+    <NaviBarView v-bind="uiModel" @ui-ready="onUiReady"></NaviBarView>
   </header>
 
   <RouterView />
