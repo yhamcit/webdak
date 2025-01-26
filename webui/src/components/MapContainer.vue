@@ -2,15 +2,25 @@
 
 // const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
 
-import { onMounted, onUnmounted } from "vue";
+import { watch, onMounted, onUnmounted } from "vue";
+import { storeToRefs } from 'pinia'
+
+import { useGeoJsonStore } from '@/stores/GeoJson'
+
 import AMapLoader from '@amap/amap-jsapi-loader';
 
-const props = defineProps(['province', 'metropolis'])
+
+const cached = useGeoJsonStore()
+const { geojson } = storeToRefs(cached)
 
 const emit = defineEmits(['change_province', 'change_metropolis'])
 
 var loca = undefined;
 var provinceLayer = undefined;
+
+watch(geojson, () => {
+  console.log(getjson)
+})
 
 onMounted(() => {
   window._AMapSecurityConfig = {securityJsCode: "cf5dba8895ae3f072aa48bc8be4c0db3",};

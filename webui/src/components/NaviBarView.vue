@@ -1,26 +1,23 @@
 <script setup>
 
-import { ref, watch, onMounted } from 'vue';
+import { onMounted } from 'vue';
 
 const emit = defineEmits(['uiReady'])
 
-const { province, metropolis } = defineModel({
-  province: '',
-  metropolis: ''
-})
-
+const region = defineModel()
 
 const props = defineProps({
   title: String, 
   l1: Array,
   l2: Array})
 
- const { title, l1, l2 } = props
+const { title, l1, l2 } = props
 
 
- onMounted(() => {
+onMounted(() => {
   emit('uiReady', 'navibar')
- })
+})
+
 
 </script>
 
@@ -28,18 +25,18 @@ const props = defineProps({
   <div class="Titile">
     <h1>{{ title }}</h1>
   </div>
-
+  <div>
+    <h3>{{ `${region.province} ${region.metropolis}` }}</h3>
+  </div>
   <div class="wrapper">
-    <h3>{{ `${province} ${metropolis}` }}</h3>
-
     <div class="wrapper">
       <v-select label="- 选择省 -"
-        v-model="province"
+        v-model="region.province"
         :items="l1"
         >
       </v-select>
       <v-select label="- 选择市 -"
-        v-model="metropolis"
+        v-model="region.metropolis"
         :items="l2"
         >
       </v-select>
