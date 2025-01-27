@@ -18,8 +18,10 @@ const emit = defineEmits(['change_province', 'change_metropolis'])
 var loca = undefined;
 var provinceLayer = undefined;
 
+
+
 watch(geojson, () => {
-  console.log(getjson)
+  console.log(geojson)
 })
 
 onMounted(() => {
@@ -140,7 +142,7 @@ function initAMap(AMap) {
         'nation-stroke': '#f09',
         'coastline-stroke': [0.85, 0.63, 0.94, 1],
         'province-stroke': 'white',
-        // 'city-stroke': 'rgba(255,255,255,0.15)',//中国特有字段
+        'city-stroke': 'rgba(255,255,255,0.15)',//中国特有字段
         'fill': function (props) {//中国特有字段
           return getColorByAdcode(props.adcode_pro)
         }

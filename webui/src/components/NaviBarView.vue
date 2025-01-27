@@ -4,7 +4,7 @@ import { onMounted } from 'vue';
 
 const emit = defineEmits(['uiReady'])
 
-const region = defineModel()
+const region = defineModel('region')
 
 const props = defineProps({
   title: String, 
