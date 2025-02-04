@@ -124,12 +124,12 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
   })
 
   // Getters
-  const getProvinces = computed(() => {
-    return []
+  const province = computed(() => {
+    return region.province
   })
 
-  const getMetroPolises = computed(() => {
-    return []
+  const metropolis = computed(() => {
+    return region.metropolis
   })
 
   // Actions
@@ -146,5 +146,5 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
   }
 
   // expose attributes
-  return {geojson, region, cached, getProvinces, getMetroPolises, updateProvinces, updateMetropolises, updateDistricts}
+  return {geojson, region, cached, province, metropolis, updateProvinces, updateMetropolises, updateDistricts}
 })

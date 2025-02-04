@@ -1,10 +1,10 @@
 <script setup>
 import { RouterView } from 'vue-router'
-import { ref, watch } from 'vue'
+import { ref, watch, isRef, isProxy } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useGeoJsonStore } from '@/stores/GeoJson'
-import NaviBarView from './components/NaviBarView.vue'
+import NaviBarView from '@/components/NaviBarView.vue'
 
 
 
@@ -14,8 +14,8 @@ const defaultRegion = '全国区域'
 const store = useGeoJsonStore()
 const { region, cached } = storeToRefs(store)
 
-region.province = defaultRegion
-region.metropolis = ''
+region.value.province = defaultRegion
+region.value.metropolis = ''
 
 // Data used by navi bar UI Component
 const naviBarUiModel = ref({
@@ -29,8 +29,7 @@ const naviBarUiModel = ref({
   l3: []
 })
 
-
-watch(region.province, () => {
+watch(region, (new_v, old_v) => {
 
   if (region.province !== activeRegion.value.province.name) {
       onProvinceChange(region.province)
@@ -67,12 +66,23 @@ async function onUiReady () {
   naviBarUiModel.value.l1.splice(0, naviBarUiModel.value.l1.length, ...[...cached.value.l1.keys()])
 }
 
+function onRetTop () {
+  isRef(region)
+  isRef(store)
+  isProxy(region)
+  isProxy(store)
+  isRef(region.province)
+  isProxy(store.province)
+  console.log(region.province)
+  console.log(region.metropolis)
+}
+
 
 </script>
 
 <template>
   <header>
-    <NaviBarView v-bind="naviBarUiModel" v-model:region="region" @ui-ready="onUiReady"></NaviBarView>
+    <NaviBarView v-bind="naviBarUiModel" v-model:region="region" @retTop="onRetTop" @ui-ready="onUiReady"></NaviBarView>
   </header>
 
   <RouterView />

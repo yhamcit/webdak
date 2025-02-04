@@ -1,15 +1,17 @@
 <script setup>
 
-import { onMounted } from 'vue';
+import { watch, onMounted } from 'vue';
 
-const emit = defineEmits(['uiReady'])
+const emit = defineEmits(['uiReady', 'retTop'])
 
 const region = defineModel('region')
 
 const props = defineProps({
   title: String, 
   l1: Array,
-  l2: Array})
+  l2: Array,
+  l3: Array
+})
 
 const { title, l1, l2 } = props
 
@@ -18,6 +20,9 @@ onMounted(() => {
   emit('uiReady', 'navibar')
 })
 
+watch(region, (new_v, old_v) => {
+  console.log(region.value)
+})
 
 </script>
 
@@ -44,7 +49,7 @@ onMounted(() => {
 
     <div class="input-card" style="width: auto;">
       <div class="input-item">
-        <button id="top-layer-btn" class="btn">回顶层</button>
+        <button id="top-layer-btn" @click="$emit('retTop')" class="btn">回顶层</button>
         <button id="upper-layer-btn" class="btn">回上层</button>
       </div>
     </div>
