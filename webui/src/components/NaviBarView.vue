@@ -2,18 +2,19 @@
 
 import { watch, onMounted } from 'vue';
 
-const emit = defineEmits(['uiReady', 'retTop'])
+const emit = defineEmits(['uiReady', 'retTop', 'changeProvince', 'changeMetropolis'])
 
-const region = defineModel('region')
+// const region = defineProps('region')
 
 const props = defineProps({
+  region: {}, 
   title: String, 
   l1: Array,
   l2: Array,
   l3: Array
 })
 
-const { title, l1, l2 } = props
+const { region, title, l1, l2 } = props
 
 
 onMounted(() => {
@@ -38,11 +39,13 @@ watch(region, (new_v, old_v) => {
       <v-select label="- 选择省 -"
         v-model="region.province"
         :items="l1"
+        @update:modelValue="emit('changeProvince', $event)"
         >
       </v-select>
       <v-select label="- 选择市 -"
         v-model="region.metropolis"
         :items="l2"
+        @update:modelValue="emit('changeMetropolis', $event)"
         >
       </v-select>
     </div>
@@ -153,9 +156,6 @@ nav a:first-of-type {
     text-align: center;
     white-space: nowrap;
     vertical-align: middle;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
     border: 1px solid transparent;
     transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
@@ -167,29 +167,21 @@ nav a:first-of-type {
     line-height: 1.5;
     border-radius: 1rem;
     -webkit-appearance: button;
-    cursor:pointer;
+    cursor: pointer;
   }
 
   .btn:hover {
     color: #fff;
     background-color: #25A5F7;
-    border-color: #25A5F7
-  }
-
-  .btn:hover {
-    text-decoration: none
+    border-color: #25A5F7;
+    text-decoration: none;
   }
 
   .input-item {
     position: relative;
-    display: -ms-flexbox;
     display: flex;
-    -ms-flex-wrap: wrap;
     flex-wrap: wrap;
-    -ms-flex-align: center;
     align-items: center;
-    width: 100%;
-    height: 3rem;
   }
 
   .input-item:last-child {

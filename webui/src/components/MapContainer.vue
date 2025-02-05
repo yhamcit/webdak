@@ -27,7 +27,6 @@ watch(geojson, () => {
 onMounted(() => {
   window._AMapSecurityConfig = {securityJsCode: "cf5dba8895ae3f072aa48bc8be4c0db3",};
 
-
   AMapLoader.load({
     key: "33300d9b8a904f22b218486056876efa",
     version: "2.0",

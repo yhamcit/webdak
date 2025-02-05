@@ -29,32 +29,33 @@ const naviBarUiModel = ref({
   l3: []
 })
 
-watch(region, (new_v, old_v) => {
-
-  if (region.province !== activeRegion.value.province.name) {
-      onProvinceChange(region.province)
-
-      
-      updateMapDataSource()
-  }
-})
-
 
 async function onProvinceChange (selected_value) {
-  // udpate data store
-  await store.updateMetropolises()
 
-  // update ui selections
-  naviBarUiModel.value.l2.splice(0, naviBarUiModel.value.l2.length, ...[...cached.value.l2.values()])
+  if (selected_value) {
+
+    region.value.province = selected_value
+
+    // udpate data store
+    await store.updateMetropolises (selected_value)
+  
+    // update ui selections
+    naviBarUiModel.value.l2.splice (0, naviBarUiModel.value.l2.length, ...[...cached.value.l2.keys()])
+  }
 }
 
 
-async function onCityChange (selected_value) {
-  // udpate data store
-  await store.updateDistricts()
+async function onMetropolisChange (selected_value) {
+  if (selected_value) {
 
-  // update ui selections
-  naviBarUiModel.value.l3.splice(0, naviBarUiModel.value.l3.length, ...[...cached.value.l3.values()])
+    region.value.metropolis = selected_value
+
+    // udpate data store
+    await store.updateDistricts (selected_value)
+  
+    // update ui selections
+    naviBarUiModel.value.l3.splice(0, naviBarUiModel.value.l3.length, ...[...cached.value.l3.keys()])
+  }
 }
 
 
@@ -82,7 +83,11 @@ function onRetTop () {
 
 <template>
   <header>
-    <NaviBarView v-bind="naviBarUiModel" v-model:region="region" @retTop="onRetTop" @ui-ready="onUiReady"></NaviBarView>
+    <NaviBarView v-bind="naviBarUiModel" :region="region" 
+      @retTop="onRetTop" 
+      @ui-ready="onUiReady"
+      @changeProvince="onProvinceChange"
+      @changeMetropolis="onMetropolisChange"></NaviBarView>
   </header>
 
   <RouterView />
