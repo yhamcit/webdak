@@ -202,7 +202,7 @@ function initAMap(AMap) {
         } else {
           provinceLayer = putProvinceLayerOntop(map, props)
           zoomInProvice(pl, provinceLayer, countryLayer, props)
-          province.value = props
+          // province.value = props
         }
       }
 
@@ -259,8 +259,8 @@ function zoomInProvice(top, bg, fg, targetProv) {
     [{
         center: {
           value: [targetProv.x, targetProv.y],
-          // control: [[121.424503326416, 1.199146851153124], 
-          //           [121.46656036376952, 31.245828642661486]],
+          control: [[108.940174, 34.341568], 
+                    [121.46656036376952, 31.245828642661486]],
           timing: [0.3, 0, 0.1, 1],
           duration: 800,
         },
