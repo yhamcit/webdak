@@ -17,7 +17,8 @@ const emit = defineEmits(['change_province', 'change_metropolis'])
 
 var loca = undefined;
 var provinceLayer = undefined;
-
+var map = undefined;
+var colors = {};
 
 
 watch(geojson, () => {
@@ -26,6 +27,8 @@ watch(geojson, () => {
 
 onMounted(() => {
   window._AMapSecurityConfig = {securityJsCode: "cf5dba8895ae3f072aa48bc8be4c0db3",};
+
+  map = null
 
   AMapLoader.load({
     key: "33300d9b8a904f22b218486056876efa",
@@ -40,7 +43,7 @@ onMounted(() => {
     }
   })
     .then((AMap) => {
-      initAMap(AMap)
+      map = initAMap(AMap)
     })
     .catch((e) => {
       console.log(e);
@@ -49,11 +52,12 @@ onMounted(() => {
 
 onUnmounted(() => {
   map.destroy();
+  map = null;
 });
 
 
 function createPrismLayer(map) {
-  loca = new Loca.Container({
+  let loca = new Loca.Container({
     map,
   });
 
@@ -117,13 +121,7 @@ function createPrismLayer(map) {
   return pl;
 }
 
-
-
-function initAMap(AMap) {
-
-  window.movingDraw = true;
-  var colors = {};
-  var getColorByAdcode = function (adcode) {
+var getColorByAdcode = function (adcode) {
     if (!colors[adcode]) {
       var gb = Math.random() * 155 + 50;
       colors[adcode] = 'rgb(' + gb + ',' + gb + ',255)';
@@ -131,6 +129,10 @@ function initAMap(AMap) {
 
     return colors[adcode];
   };
+
+
+function initAMap(AMap) {
+  window.movingDraw = true;
 
   var countryLayer = new AMap.DistrictLayer.Country({
       zIndex: 2,
@@ -164,33 +166,33 @@ function initAMap(AMap) {
     mapStyle: 'amap://styles/dark'
   });
 
-  var pl = createPrismLayer(map);
+  // var pl = createPrismLayer(map);
 
-  map.on('complete', function () {
-    setTimeout(function () {
-      pl.show(500);
+  // map.on('complete', function () {
+  //   setTimeout(function () {
+  //     pl.show(500);
 
-      pl.addAnimate({
-        key: 'height',
-        value: [0, 1],
-        duration: 500,
-        easing: 'Linear',
-        transform: 2000,
-        random: true,
-        delay: 8000,
-      });
-    }, 
-    800);
-  });
+  //     pl.addAnimate({
+  //       key: 'height',
+  //       value: [0, 1],
+  //       duration: 500,
+  //       easing: 'Linear',
+  //       transform: 2000,
+  //       random: true,
+  //       delay: 8000,
+  //     });
+  //   }, 
+  //   800);
+  // });
 
-  map.on('mousemove', function (e) {
-    var feat = pl.queryFeature(e.pixel.toArray());
-    if (feat) {
-      // clickInfo.show();
-    } else {
-      // clickInfo.hide();
-    }
-  });
+  // map.on('mousemove', function (e) {
+  //   var feat = pl.queryFeature(e.pixel.toArray());
+  //   if (feat) {
+  //     // clickInfo.show();
+  //   } else {
+  //     // clickInfo.hide();
+  //   }
+  // });
 
   map.on('click', function (ev) {
       var px = ev.pixel;
@@ -201,7 +203,8 @@ function initAMap(AMap) {
           props.province = undefined;
         } else {
           provinceLayer = putProvinceLayerOntop(map, props)
-          zoomInProvice(pl, provinceLayer, countryLayer, props)
+          zoomInProvice(null, provinceLayer, countryLayer, props)
+          // zoomInProvice(pl, provinceLayer, countryLayer, props)
           // province.value = props
         }
       }
@@ -226,6 +229,7 @@ function initAMap(AMap) {
 
 
   // loca.animate.start();
+  return map
 }
 
 
@@ -253,28 +257,41 @@ function putProvinceLayerOntop(map, targetProv) {
 }
 
 function zoomInProvice(top, bg, fg, targetProv) {
-  top.hide(600)
-  bg.hide(1200)
+  if (top) {
+    top.hide(600)
+  }
+
+  if (bg) {
+    bg.hide(600)
+  } 
+
+  var loca = window.loca = new Loca.Container({
+      map,
+    });
+
   loca.viewControl.addAnimates(
     [{
         center: {
-          value: [targetProv.x, targetProv.y],
-          control: [[108.940174, 34.341568], 
-                    [121.46656036376952, 31.245828642661486]],
+          // value: [targetProv.x, targetProv.y],
+          // control: [[108.940174, 34.341568], 
+          //           [121.46656036376952, 31.245828642661486]],
+          value: [106, 28], // 动画终点的经纬度
+          control: [[113, 45.5], [107, 36.5]], // 过渡中的轨迹控制点，地图上的经纬度
           timing: [0.3, 0, 0.1, 1],
           duration: 800,
         },
-        zoom: {
-          value: 9,
-          control: [[0.3, 5], [1, 9]],
-          timing: [0.3, 0, 0.7, 1],
-          duration: 800,
-        }
+        // zoom: {
+        //   value: 9,
+        //   control: [[0.3, 5], [1, 9]],
+        //   timing: [0.3, 0, 0.7, 1],
+        //   duration: 800,
+        // }
       }], 
     function () {
         fg.show(1000);
-
-        setTimeout((top) => top.show(800), 100);
+        if (top) {
+          setTimeout((top) => top.show(800), 100);
+        }
         console.log('结束');
     });
 
