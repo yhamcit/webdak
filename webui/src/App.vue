@@ -20,13 +20,8 @@ region.value.metropolis = ''
 // Data used by navi bar UI Component
 const naviBarUiModel = ref({
   title: defaultTitle,
-  // region: {
-  //   province: defaultRegion,
-  //   metropolis: '', 
-  // },
   l1: [],
   l2: [],
-  l3: []
 })
 
 

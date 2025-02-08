@@ -21,9 +21,6 @@ onMounted(() => {
   emit('uiReady', 'navibar')
 })
 
-watch(region, (new_v, old_v) => {
-  console.log(region.value)
-})
 
 </script>
 

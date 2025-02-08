@@ -10,34 +10,33 @@ import { useGeoJsonStore } from '@/stores/GeoJson'
 import AMapLoader from '@amap/amap-jsapi-loader';
 
 
-const cached = useGeoJsonStore()
-const { geojson } = storeToRefs(cached)
+const store = useGeoJsonStore()
+const { geojson, region, cached } = storeToRefs(store)
+
 
 const emit = defineEmits(['change_province', 'change_metropolis'])
 
-var loca = undefined;
-var provinceLayer = undefined;
 var map = undefined;
 var colors = {};
 
 
-watch(geojson, () => {
-  console.log(geojson)
+watch (region, (new_v, old_v) => {
+  console.log('[MAPCONTAINER] region changed', new_v, old_v)
 })
+
 
 onMounted(async () => {
   window._AMapSecurityConfig = {securityJsCode: "cf5dba8895ae3f072aa48bc8be4c0db3",};
 
+  if (map) {
+    map.destroy();
+  }
   map = null
 
   await AMapLoader.load({
     key: "33300d9b8a904f22b218486056876efa",
     version: "2.0",
     plugins: ["AMap.Scale"],
-    // AMapUI: {
-    //     version: '1.1',
-    //     plugins: [],
-    // },
     Loca: {
         version: '2.0'
     }
@@ -138,13 +137,13 @@ function initAMap(AMap) {
       zIndex: 2,
       opacity: 0.6, 
       SOC: 'CHN',
-      depth: 2,
+      depth: 1,
       styles: {
         'nation-stroke': '#f09',
         'coastline-stroke': [0.85, 0.63, 0.94, 1],
         'province-stroke': 'white',
-        // 'city-stroke': 'rgba(255,255,255,0.15)',//中国特有字段
-        'fill': function (props) {//中国特有字段
+        'city-stroke': 'rgba(255,255,255,0.15)',
+        'fill': function (props) {
           return getColorByAdcode(props.adcode_pro)
         }
       }
@@ -156,11 +155,9 @@ function initAMap(AMap) {
     viewMode: '3D',
     visible: false,
     pitch: 45,
-    // center: [103.594884, 36.964587],
-    center: [108.940174, 34.341568],
+    center: [108.940174, 34.341568],  // center: [103.594884, 36.964587],
     rotateEnable: false,
     layers: [
-      // disProvince,
       countryLayer,
     ],
     mapStyle: 'amap://styles/dark'
@@ -202,29 +199,13 @@ function initAMap(AMap) {
         if (typeof props.province !== 'undefined' && props.province) {
           props.province = undefined;
         } else {
-          provinceLayer = putProvinceLayerOntop(map, props)
+          let provinceLayer = putProvinceLayerOntop(map, props)
           zoomInProvice(pl, provinceLayer, countryLayer, props)
-          // province.value = props
+          region.province = props.NAME_CHN
+          region.adcode_pro = props.adcode_pro
         }
       }
-
-
-      // if (props) {
-      // var SOC = props.SOC;
-      // if(SOC){
-      //     // 重置行政区样式
-      //     disWorld.setStyles({
-      //         // 国境线
-      //         //nation-stroke': nationStroke,
-      //         // 海岸线
-      //         //'coastline-stroke': '',
-      //         'fill': function (props) {
-      //             return props.SOC == SOC ? nationFill : 'white';
-      //         }
-      //     });
-      //     updateInfo(props);
-      // }
-  });
+    });
 
 
   // loca.animate.start();
@@ -260,10 +241,6 @@ function zoomInProvice(top, fg, bg, targetProv) {
     top.hide(600)
   }
 
-  if (bg) {
-    bg.hide(600)
-  } 
-
   var loca = window.loca = new Loca.Container({
       map,
     });
@@ -287,8 +264,13 @@ function zoomInProvice(top, fg, bg, targetProv) {
         }
       }], 
     function () {
+      if (fg) {
         fg.show(1000);
-        if (top) {
+      }
+      if (bg) {
+        bg.hide(1000)
+      } 
+      if (top) {
           setTimeout((top) => top.show(800), 100);
         }
     });

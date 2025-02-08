@@ -114,7 +114,7 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
 
   const region = ref({
     province: '',
-    metropolis: ''
+    adcode_p: '',
   })
 
   const cached = ref({
