@@ -21,7 +21,7 @@ region.value.metropolis = ''
 const naviBarUiModel = ref({
   title: defaultTitle,
   l1: [],
-  l2: [],
+  // l2: [],
 })
 
 
@@ -41,16 +41,6 @@ async function onProvinceChange (selected_value) {
 
 
 async function onMetropolisChange (selected_value) {
-  if (selected_value) {
-
-    region.value.metropolis = selected_value
-
-    // udpate data store
-    await store.updateDistricts (selected_value)
-  
-    // update ui selections
-    naviBarUiModel.value.l3.splice(0, naviBarUiModel.value.l3.length, ...[...cached.value.l3.keys()])
-  }
 }
 
 
@@ -63,14 +53,6 @@ async function onUiReady () {
 }
 
 function onRetTop () {
-  isRef(region)
-  isRef(store)
-  isProxy(region)
-  isProxy(store)
-  isRef(region.province)
-  isProxy(store.province)
-  console.log(region.province)
-  console.log(region.metropolis)
 }
 
 

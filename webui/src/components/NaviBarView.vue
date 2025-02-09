@@ -2,7 +2,8 @@
 
 import { watch, onMounted } from 'vue';
 
-const emit = defineEmits(['uiReady', 'retTop', 'changeProvince', 'changeMetropolis'])
+const emit = defineEmits(['uiReady', 'retTop', 'changeProvince'])
+// const emit = defineEmits(['uiReady', 'retTop', 'changeProvince', 'changeMetropolis'])
 
 // const region = defineProps('region')
 
@@ -10,11 +11,12 @@ const props = defineProps({
   region: {}, 
   title: String, 
   l1: Array,
-  l2: Array,
-  l3: Array
+  // l2: Array,
+  // l3: Array
 })
 
-const { region, title, l1, l2 } = props
+const { region, title, l1 } = props
+// const { region, title, l1, l2 } = props
 
 
 onMounted(() => {
@@ -39,17 +41,17 @@ onMounted(() => {
         @update:modelValue="emit('changeProvince', $event)"
         >
       </v-select>
-      <v-select label="- 选择市 -"
+      <!-- <v-select label="- 选择市 -"
         v-model="region.metropolis"
         :items="l2"
         @update:modelValue="emit('changeMetropolis', $event)"
         >
-      </v-select>
+      </v-select> -->
     </div>
 
     <div class="input-card" style="width: auto;">
       <div class="input-item">
-        <button id="top-layer-btn" @click="$emit('retTop')" class="btn">回顶层</button>
+        <button id="top-layer-btn" class="btn" @click="$emit('retTop')">回顶层</button>
         <button id="upper-layer-btn" class="btn">回上层</button>
       </div>
     </div>
@@ -180,7 +182,7 @@ nav a:first-of-type {
     flex-wrap: wrap;
     align-items: center;
   }
-
+/* 
   .input-item:last-child {
     margin-bottom: 0;
   }
@@ -210,20 +212,15 @@ nav a:first-of-type {
   .input-item-text, input[type=text],input[type=date], select {
     height: calc(2.2rem + 2px);
   }
-
   .input-item-text {
     width: 6rem;
     text-align: justify;
     padding: 0.4rem 0.7rem;
     display: inline-block;
     text-justify: distribute-all-lines;
-    /*ie6-8*/
     text-align-last: justify;
-    /* ie9*/
     -moz-text-align-last: justify;
-    /*ff*/
     -webkit-text-align-last: justify;
-    /*chrome 20+*/
     -ms-flex-align: center;
     align-items: center;
     margin-bottom: 0;
@@ -239,10 +236,10 @@ nav a:first-of-type {
     border-bottom-right-radius: 0;
     border-top-right-radius: 0;
   }
-
   .input-item-text input[type=checkbox], .input-item-text input[type=radio] {
     margin-top: 0
-  }
+  } 
+*/
 
   .input-card {
     display: flex;
@@ -256,9 +253,9 @@ nav a:first-of-type {
     border-width: 0;
     border-radius: 0.4rem;
     box-shadow: 0 2px 6px 0 rgba(114, 124, 245, .5);
-    position: fixed;
+    /* position: fixed;
     bottom: 1rem;
-    right: 1rem;
+    right: 1rem; */
     -ms-flex: 1 1 auto;
     flex: 1 1 auto;
     padding: 0.75rem 1.25rem;
