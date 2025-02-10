@@ -14,8 +14,6 @@ const defaultRegion = '全国区域'
 const store = useGeoJsonStore()
 const { region, cached } = storeToRefs(store)
 
-region.value.province = defaultRegion
-region.value.metropolis = ''
 
 // Data used by navi bar UI Component
 const naviBarUiModel = ref({
@@ -24,8 +22,9 @@ const naviBarUiModel = ref({
   // l2: [],
 })
 
+resetRegion()
 
-async function onProvinceChange (selected_value) {
+async function onRegionChange (selected_value) {
 
   if (selected_value) {
 
@@ -33,14 +32,7 @@ async function onProvinceChange (selected_value) {
 
     // udpate data store
     await store.updateMetropolises (selected_value)
-  
-    // update ui selections
-    naviBarUiModel.value.l2.splice (0, naviBarUiModel.value.l2.length, ...[...cached.value.l2.keys()])
   }
-}
-
-
-async function onMetropolisChange (selected_value) {
 }
 
 
@@ -52,7 +44,12 @@ async function onUiReady () {
   naviBarUiModel.value.l1.splice(0, naviBarUiModel.value.l1.length, ...[...cached.value.l1.keys()])
 }
 
-function onRetTop () {
+function resetRegion () {
+  region.value.province = defaultRegion
+}
+
+function onReturnUpper () {
+  resetRegion ()
 }
 
 
@@ -61,9 +58,9 @@ function onRetTop () {
 <template>
   <header>
     <NaviBarView v-bind="naviBarUiModel" :region="region" 
-      @retTop="onRetTop" 
+      @returnUpper="onReturnUpper" 
       @ui-ready="onUiReady"
-      @changeProvince="onProvinceChange"
+      @changeRegion="onRegionChange"
       @changeMetropolis="onMetropolisChange"></NaviBarView>
   </header>
 

@@ -113,8 +113,7 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
   })
 
   const region = ref({
-    province: '',
-    adcode_p: '',
+    province: ''
   })
 
   const cached = ref({
@@ -124,12 +123,16 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
   })
 
   // Getters
-  const province = computed(() => {
-    return region.province
+  const adcode = computed(() => {
+    if (cached.value.l1.has(region.province)) {
+      return cached.value.l1[region.province].adcode
+    } else {
+      return null
+    }
   })
 
   const metropolis = computed(() => {
-    return region.metropolis
+    return region.adcode
   })
 
   // Actions

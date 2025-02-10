@@ -19,9 +19,12 @@ const emit = defineEmits(['change_province', 'change_metropolis'])
 var map = undefined;
 var colors = {};
 
-
-watch (region, (new_v, old_v) => {
-  console.log('[MAPCONTAINER] region changed', new_v, old_v)
+store.$subscribe((mutation, state) => {
+  if (!state.adcode) {
+    console.log('state.adcode is empty')
+  } else {
+    console.log('state.adcode is not empty') 
+  }
 })
 
 
@@ -271,7 +274,7 @@ function zoomInProvice(top, fg, bg, targetProv) {
         bg.hide(1000)
       } 
       if (top) {
-          setTimeout((top) => top.show(800), 100);
+          setTimeout(() => top.show(800), 100);
         }
     });
 

@@ -1,22 +1,16 @@
 <script setup>
 
-import { watch, onMounted } from 'vue';
+import { onMounted } from 'vue';
 
-const emit = defineEmits(['uiReady', 'retTop', 'changeProvince'])
-// const emit = defineEmits(['uiReady', 'retTop', 'changeProvince', 'changeMetropolis'])
-
-// const region = defineProps('region')
+const emit = defineEmits(['uiReady', 'returnUpper', 'changeRegion'])
 
 const props = defineProps({
   region: {}, 
   title: String, 
   l1: Array,
-  // l2: Array,
-  // l3: Array
 })
 
 const { region, title, l1 } = props
-// const { region, title, l1, l2 } = props
 
 
 onMounted(() => {
@@ -31,28 +25,21 @@ onMounted(() => {
     <h1>{{ title }}</h1>
   </div>
   <div>
-    <h3>{{ `${region.province} ${region.metropolis}` }}</h3>
+    <h3>{{ `${region.province}` }}</h3>
   </div>
   <div class="wrapper">
     <div class="wrapper">
       <v-select label="- 选择省 -"
         v-model="region.province"
         :items="l1"
-        @update:modelValue="emit('changeProvince', $event)"
+        @update:modelValue="emit('changeRegion', $event)"
         >
       </v-select>
-      <!-- <v-select label="- 选择市 -"
-        v-model="region.metropolis"
-        :items="l2"
-        @update:modelValue="emit('changeMetropolis', $event)"
-        >
-      </v-select> -->
     </div>
 
     <div class="input-card" style="width: auto;">
       <div class="input-item">
-        <button id="top-layer-btn" class="btn" @click="$emit('retTop')">回顶层</button>
-        <button id="upper-layer-btn" class="btn">回上层</button>
+        <button id="upper-layer-btn" class="btn" @click="$emit('returnUpper')">回上层</button>
       </div>
     </div>
 
@@ -182,7 +169,29 @@ nav a:first-of-type {
     flex-wrap: wrap;
     align-items: center;
   }
-/* 
+
+
+  .input-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    word-wrap: break-word;
+    /* background-color: #fff; */
+    background-clip: border-box;
+    border-radius: .25rem;
+    width: 22rem;
+    border-width: 0;
+    border-radius: 0.4rem;
+    box-shadow: 0 2px 6px 0 rgba(114, 124, 245, .5);
+    /* position: fixed;
+    bottom: 1rem;
+    right: 1rem; */
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+    padding: 0.75rem 1.25rem;
+  }
+
+  /* 
   .input-item:last-child {
     margin-bottom: 0;
   }
@@ -240,27 +249,6 @@ nav a:first-of-type {
     margin-top: 0
   } 
 */
-
-  .input-card {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    word-wrap: break-word;
-    background-color: #fff;
-    background-clip: border-box;
-    border-radius: .25rem;
-    width: 22rem;
-    border-width: 0;
-    border-radius: 0.4rem;
-    box-shadow: 0 2px 6px 0 rgba(114, 124, 245, .5);
-    /* position: fixed;
-    bottom: 1rem;
-    right: 1rem; */
-    -ms-flex: 1 1 auto;
-    flex: 1 1 auto;
-    padding: 0.75rem 1.25rem;
-  }
-
 
 }
 </style>
