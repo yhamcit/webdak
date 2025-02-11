@@ -19,6 +19,7 @@ const emit = defineEmits(['change_province', 'change_metropolis'])
 var map = undefined;
 var colors = {};
 
+
 store.$subscribe((mutation, state) => {
   if (!state.adcode) {
     console.log('state.adcode is empty')
@@ -27,6 +28,24 @@ store.$subscribe((mutation, state) => {
   }
 })
 
+store.$onAction(({name, store, args, after, onError }) => {
+  console.log('Action:', name);
+  console.log('Store:', store);
+  console.log('Arguments:', args);
+  after((result) => {
+    console.log('Result:', result)
+  });
+  onError((error) => {
+    console.log('Error:', error)
+  });
+})
+
+watch(region, async (newVal, oldVal) => {
+    console.log('region.province changed:', newVal, oldVal)
+  },
+  { 
+    deep: true 
+  })
 
 onMounted(async () => {
   window._AMapSecurityConfig = {securityJsCode: "cf5dba8895ae3f072aa48bc8be4c0db3",};

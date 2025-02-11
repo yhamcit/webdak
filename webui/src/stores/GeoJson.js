@@ -149,5 +149,5 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
   }
 
   // expose attributes
-  return {geojson, region, cached, province, metropolis, updateProvinces, updateMetropolises, updateDistricts}
+  return {geojson, region, cached, adcode, metropolis, updateProvinces, updateMetropolises, updateDistricts}
 })
