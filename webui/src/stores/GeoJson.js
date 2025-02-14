@@ -3,24 +3,35 @@ import { defineStore } from 'pinia'
 
 import ky from 'ky'
 
-async function fetchGeoRegions(parent) {
-  let lst = []
-  let params = new URLSearchParams({
+
+const defaultRegion = '全国'
+
+
+async function* fetchGeoRegions(dtlvl, ...parents) {
+
+  if (parents.length == 0) {
+    parents = [null]
+  }
+
+  for (let upper of parents) {
+    let params = new URLSearchParams({
       key: 'e28e8e04218b803aceeffed7d28fd9c9', 
-      subdistrict: 1})
+      subdistrict: dtlvl,
+    })
 
-  if (parent) {
-    params.append('keywords', parent)
+    if (upper) {
+      params.append('keywords', upper)
+    }
+
+    const info = await ky.get('https://restapi.amap.com/v3/config/district', 
+      {searchParams: params}).json();
+
+    if (info.status != '1' || info.infocode !== '10000') {
+      break
+    }
+
+    yield info.districts[0].districts
   }
-
-  const info = await ky.get('https://restapi.amap.com/v3/config/district', 
-    {searchParams: params}).json();
-
-  for (let d of info.districts) {
-    lst = lst.concat(d.districts)
-  }
-
-  return lst
 }
 
 async function updateGeoBindValues() {
@@ -42,6 +53,7 @@ async function updateGeoBindValues() {
 
   return lst
 }
+
 
 function newGeoJson(id, name, geo) {
   return {
@@ -73,18 +85,18 @@ function newGeoJson(id, name, geo) {
 }
 
 async function updateGeoRegions(parent, dset, vals) {
-  let regions = await fetchGeoRegions(parent)
 
-  for (let region of regions) {
-    if (dset.has(region.name)) {
-      continue
+  for await (const regions of fetchGeoRegions(1, parent)) {
+
+    for (let region of regions) {
+      if (dset.has(region.name)) {
+        continue
+      }
+  
+      let geoPoint = newGeoJson(length, region.name, region)
+      dset.set(region.name, geoPoint)
     }
-
-    let geoPoint = newGeoJson(length, region.name, region)
-    dset.set(region.name, geoPoint)
   }
-
-  vals.splice(0, vals.length)
 
   let values = await updateGeoBindValues()
 
@@ -113,7 +125,7 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
   })
 
   const region = ref({
-    province: ''
+    province: defaultRegion
   })
 
   const cached = ref({
@@ -131,23 +143,22 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
     }
   })
 
-  const metropolis = computed(() => {
-    return region.adcode
-  })
+  function reset() {
+    region.value.province = defaultRegion
+  }
 
   // Actions
-  async function updateProvinces() {
+  async function initTopRegions() {
     await updateGeoRegions(null, cached.value.l1, geojson.value.features)
   }
 
   async function updateMetropolises(province) {
+
+    geojson.value.features.splice(0, vals.length)
+
     await updateGeoRegions(province, cached.value.l2, geojson.value.features)
   }
 
-  async function updateDistricts(metropolis) {
-    await updateGeoRegions(metropolis, cached.value.l3, geojson.value.features)
-  }
-
   // expose attributes
-  return {geojson, region, cached, adcode, metropolis, updateProvinces, updateMetropolises, updateDistricts}
+  return {geojson, region, cached, adcode, reset, initTopRegions, updateMetropolises, updateDistricts}
 })

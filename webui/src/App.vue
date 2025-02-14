@@ -9,7 +9,6 @@ import NaviBarView from '@/components/NaviBarView.vue'
 
 
 const defaultTitle = '地方公共债务数据'
-const defaultRegion = '全国区域'
 
 const store = useGeoJsonStore()
 const { region, cached } = storeToRefs(store)
@@ -36,20 +35,24 @@ async function onRegionChange (selected_value) {
 }
 
 
-async function onUiReady () {
-  // udpate data store
-  await store.updateProvinces()
+function resetRegion() {
+  store.reset()
 
   // update ui selections
   naviBarUiModel.value.l1.splice(0, naviBarUiModel.value.l1.length, ...[...cached.value.l1.keys()])
 }
 
-function resetRegion () {
-  region.value.province = defaultRegion
+
+async function onUiReady() {
+  // udpate data store
+  await store.initTopRegions()
+
+  resetRegion()
 }
 
-function onReturnUpper () {
-  resetRegion ()
+
+function onReturnUpper() {
+  resetRegion()
 }
 
 
