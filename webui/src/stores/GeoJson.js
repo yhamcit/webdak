@@ -34,28 +34,21 @@ async function* fetchGeoRegions(dtlvl, ...parents) {
   }
 }
 
-async function updateGeoBindValues() {
-  let lst = []
-  // let params = new URLSearchParams({
-  //     key: 'e28e8e04218b803aceeffed7d28fd9c9', 
-  //     subdistrict: 1})
+async function updateGeoBoundValues(districts) {
+  let res = new map()
 
-  // if (upper_region) {
-  //   params.append('keywords', upper_region)
-  // }
+  const info = await ky.post('https://web.cdyhamc.com/endpoints/publicdebt/query', 
+    {json: {districts: districts}}).json();
 
-  // const info = await ky.get('https://restapi.amap.com/v3/config/district', 
-  //   {searchParams: params}).json();
+  for (dst of districts) {
+    res[dst] = 7894.24
+  }
 
-  // for (let d of info.districts) {
-  //   lst = lst.concat(d.districts)
-  // }
-
-  return lst
+  return res
 }
 
 
-function newGeoJson(id, name, geo) {
+function newGeoJson(id, geo, gdp) {
   return {
     "type": "Feature",
     "geometry": {
@@ -66,7 +59,7 @@ function newGeoJson(id, name, geo) {
     },
     "properties": {
       "id": id,
-      "名称": name,
+      "名称": geo.name,
       // "地址": name,
       "adcode_n": geo.adcode,
       "adcode_p": geo.province,
@@ -76,7 +69,7 @@ function newGeoJson(id, name, geo) {
       "创建时间": "2021-01-27 14:45:12",
       "修改时间": "2021-01-27 14:45:12",
       // "人口": 2884.62,
-      "GDP": 7894.24,
+      "GDP": gpd,
       // "人均GDP": 27367,
       // "人均折美元": 4043
     }
@@ -84,33 +77,28 @@ function newGeoJson(id, name, geo) {
 
 }
 
-async function updateGeoRegions(parent, dset, vals) {
+async function updateGeoRegions(parent, dset) {
+  let dst_lst = []
 
   for await (const regions of fetchGeoRegions(1, parent)) {
 
     for (let region of regions) {
-      if (dset.has(region.name)) {
+
+      if (dset.has(region.adcode)) {
         continue
       }
-  
-      let geoPoint = newGeoJson(length, region.name, region)
-      dset.set(region.name, geoPoint)
+
+      dst_lst.push(region.name)
     }
   }
 
-  let values = await updateGeoBindValues()
+  if (dst_lst.length > 0) {
+    let debts = updateGeoBoundValues(dst_lst)
+    for (let [key, value] of debts) {
 
-  for (let value of values) {
-    if (dset.has(value.name)) {
-      continue
+      dset.set(region.adcode, newGeoJson(length, key, value))
     }
-
-    let geoPoint = dset.get(value.name)
-    setGeoJsonValue(geoPoint, value)
-
-    vals.push(geoPoint)
-  } 
-
+  }
 }
 
 function setGeoJsonValue(geo, value) {
@@ -128,16 +116,12 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
     province: defaultRegion
   })
 
-  const cached = ref({
-    l1: new Map(),
-    l2: new Map(),
-    l3: new Map(),
-  })
+  const cached = ref(new Map())
 
   // Getters
   const adcode = computed(() => {
-    if (cached.value.l1.has(region.province)) {
-      return cached.value.l1[region.province].adcode
+    if (cached.value.has(region.province)) {
+      return cached.value[region.province].adcode
     } else {
       return null
     }
@@ -149,16 +133,16 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
 
   // Actions
   async function initTopRegions() {
-    await updateGeoRegions(null, cached.value.l1, geojson.value.features)
+    await updateGeoRegions(null, cached.value)
   }
 
   async function updateMetropolises(province) {
 
     geojson.value.features.splice(0, vals.length)
 
-    await updateGeoRegions(province, cached.value.l2, geojson.value.features)
+    // await updateGeoRegions(province, cached.value.l2, geojson.value.features)
   }
 
   // expose attributes
-  return {geojson, region, cached, adcode, reset, initTopRegions, updateMetropolises, updateDistricts}
+  return {geojson, region, cached, adcode, reset, initTopRegions, updateMetropolises}
 })

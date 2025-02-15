@@ -39,7 +39,7 @@ function resetRegion() {
   store.reset()
 
   // update ui selections
-  naviBarUiModel.value.l1.splice(0, naviBarUiModel.value.l1.length, ...[...cached.value.l1.keys()])
+  naviBarUiModel.value.l1.splice(0, naviBarUiModel.value.length, ...[...cached.value.keys()])
 }
 
 
