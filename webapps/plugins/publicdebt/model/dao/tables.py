@@ -116,8 +116,8 @@ def simple_query_stmt(fields: dict, in_key: str=None, in_cons: set=None):
         match_condition = ' AND '.join(' = '.join((str(k), f"'{str(v)}'")) for k, v in fields.items() if v)
         where_clause = f"WHERE {match_condition}"
     elif in_key and in_cons and any(in_cons):
-        match_condition = f"{in_key} IN ({', '.join(f'"{c}"' for c in in_cons)})"
-        where_clause = f"WHERE {match_condition}"
+        match_condition = ', '.join(f'"{c}"' for c in in_cons)
+        where_clause = f"WHERE {in_key} IN ({match_condition})"
     else:
         where_clause = ""
 
