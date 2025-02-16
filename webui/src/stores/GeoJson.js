@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 import ky from 'ky'
+import { walkIdentifiers } from 'vue/compiler-sfc'
 
 
 const defaultRegion = '全国'
@@ -38,12 +39,14 @@ async function updateGeoBoundValues(districts) {
   let res = new Map()
 
   const info = await ky.post('http://localhost:8086/endpoints/publicdebt/query', 
-  // const info = await ky.post('https://web.cdyhamc.com/endpoints/publicdebt/query', 
     {json: {districts: districts}}).json();
 
+
+  // TODO: Mock values here
   for (let dst of districts) {
-    res[dst] = 7894.24
+    res.set(dst, 7894.24)
   }
+  // TODO: Mock values here
 
   return res
 }
@@ -78,32 +81,25 @@ function newGeoJson(id, geo, gdp) {
 
 }
 
-async function updateGeoRegions(parent, dset) {
-  let dst_lst = []
+async function updateGeoRegions(parent, cached) {
+  let collection = new Map()
 
   for await (const regions of fetchGeoRegions(1, parent)) {
-
+    // All in one collection
     for (let region of regions) {
-
-      if (dset.has(region.adcode)) {
-        continue
+      if (!cached.has(region.adcode)) {
+        collection.set(region.adcode, region)
       }
-
-      dst_lst.push(region.name)
     }
   }
 
-  if (dst_lst.length > 0) {
-    let debts = await updateGeoBoundValues(dst_lst)
-    for (let [key, value] of debts) {
+  if (collection.size  > 0) {
+    let debts = await updateGeoBoundValues(Array.from(collection.value()).map((value) => value.name))
 
-      dset.set(region.adcode, newGeoJson(length, key, value))
+    for (const [name, value] of debts) {
+      cached.set(region.adcode, newGeoJson(length, name, collection.get(name)))
     }
   }
-}
-
-function setGeoJsonValue(geo, value) {
-
 }
 
 
