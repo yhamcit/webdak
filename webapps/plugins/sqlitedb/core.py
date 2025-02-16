@@ -44,9 +44,21 @@ class SqlitePlugin():
         asyncio.run(to_thread(run_sqlite, self.db, generat_table_stmt()))
 
 
-    async def query_debt(self, params: dict=default_query_conditions):
+    async def query_debt(self, in_key: str=None, in_cons: set=None):
 
-        result = await to_thread(run_sqlite, self.db, simple_query_stmt(params))
+        query_fields = {
+            "district": None,
+            "local_debt_balances": None,
+            "total_debt_upper_limit": None,
+            "total_local_bonds": None,
+            "total_debt_amount": None,
+            "total_gdp_amount": None,
+            "debt_to_gdp_ratio": None,
+            "local_general_public_revenue": None,
+            "debt_to_revenue_ratio": None,
+        }
+
+        result = await to_thread(run_sqlite, self.db, simple_query_stmt(fields=query_fields, in_key=in_key, in_cons=in_cons))
         return result
     
     
@@ -55,6 +67,9 @@ def run_sqlite(db_uri, sql_stat, counts: int=50):
 
     with connect_sqlite(db_uri) as db_conn:
         sql = db_conn.cursor()
-        result = sql.execute(sql_stat)
+        try:
+            result = sql.execute(sql_stat)
+        except Exception as e:
+            print(e.args)
 
-        return result.fetchmany(counts)
+    return result.fetchmany(counts)

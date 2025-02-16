@@ -70,9 +70,8 @@ class PublicDebtQuery(PluginEndpoint):
 
         sqlite = SqlitePlugin()
 
-        for region in request.region:
-            result = await sqlite.query_debt(params=region)
-            response.append(result)
+        result = await sqlite.query_debt(in_key="name", in_cons=request.districts)
+        response.append(result)
 
 
         return response

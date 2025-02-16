@@ -32,8 +32,8 @@ create_table_stmt = """
         country TEXT, 
         province TEXT NOT NULL, 
         metropolis TEXT, 
-        city TEXT NOT NULL, 
         district TEXT, 
+        name TEXT NOT NULL, 
         local_debt_balances REAL NOT NULL,  # 地方债余额
         total_debt_upper_limit REAL, 
         total_local_bonds REAL,             # 地方债券总额
@@ -49,9 +49,9 @@ create_table_stmt = """
 
 insert_debt = """
     INSERT INTO area_public_debt 
-        (country, province, metropolis, city, local_debt_balances, statistical_scope, update_time) 
+        (country, province, metropolis, district, name, local_debt_balances, statistical_scope, update_time) 
     VALUES 
-        ('中国', '四川', '成都', '成都', 8073, '一般债务', '2024-12-31 00:00:00')
+        ('中国', '四川', '成都', null, '成都', 8073, '一般债务', '2024-12-31 00:00:00')
     """
 
 query_debt = """
@@ -62,8 +62,8 @@ default_query_conditions = {
     'country': None, 
     'province': None, 
     'metropolis': None, 
-    'city': None, 
     'district': None, 
+    'name': None, 
     'local_debt_balances': None, 
     'total_debt_upper_limit': None, 
     'total_local_bonds': None, 
@@ -84,8 +84,8 @@ def generat_table_stmt():
             country TEXT, 
             province TEXT NOT NULL, 
             metropolis TEXT, 
-            city TEXT NOT NULL, 
             district TEXT, 
+            name TEXT NOT NULL, 
             local_debt_balances REAL NOT NULL,
             total_debt_upper_limit REAL, 
             total_local_bonds REAL,
@@ -110,16 +110,18 @@ def insert_record_stmt(data_mapping: dict):
     
     return insert_record_stmt
     
-def simple_query_stmt(fields: dict):
+def simple_query_stmt(fields: dict, in_key: str=None, in_cons: set=None):
 
-    if any(fields.values()):
+    if fields and any(fields.values()):
         match_condition = ' AND '.join(' = '.join((str(k), f"'{str(v)}'")) for k, v in fields.items() if v)
+        where_clause = f"WHERE {match_condition}"
+    elif in_key and in_cons and any(in_cons):
+        match_condition = f"{in_key} IN ({', '.join(f'"{c}"' for c in in_cons)})"
         where_clause = f"WHERE {match_condition}"
     else:
         where_clause = ""
 
-    simple_query_stmt = f"""
-        SELECT {', '.join(fields.keys())} FROM area_public_debt {where_clause}
+    simple_query_stmt = f"""SELECT {', '.join(f'`{k}`' for k in fields.keys())} FROM area_public_debt {where_clause}
         """
 
     return simple_query_stmt

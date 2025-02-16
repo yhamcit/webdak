@@ -35,12 +35,13 @@ async function* fetchGeoRegions(dtlvl, ...parents) {
 }
 
 async function updateGeoBoundValues(districts) {
-  let res = new map()
+  let res = new Map()
 
-  const info = await ky.post('https://web.cdyhamc.com/endpoints/publicdebt/query', 
+  const info = await ky.post('http://localhost:8086/endpoints/publicdebt/query', 
+  // const info = await ky.post('https://web.cdyhamc.com/endpoints/publicdebt/query', 
     {json: {districts: districts}}).json();
 
-  for (dst of districts) {
+  for (let dst of districts) {
     res[dst] = 7894.24
   }
 
@@ -93,7 +94,7 @@ async function updateGeoRegions(parent, dset) {
   }
 
   if (dst_lst.length > 0) {
-    let debts = updateGeoBoundValues(dst_lst)
+    let debts = await updateGeoBoundValues(dst_lst)
     for (let [key, value] of debts) {
 
       dset.set(region.adcode, newGeoJson(length, key, value))

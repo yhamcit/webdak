@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import get_ident
 from time import sleep
 from quart import Quart
+from quart_cors import cors
 
 from webapps.plugins.tplus.core import TplusPlugin
 from webapps.modules.lumber.lumber import Lumber
@@ -12,7 +13,9 @@ from webapps.modules.lumber.lumber import Lumber
 from multiprocessing import current_process
 
 
+
 app = Quart(__name__)
+app = cors(app, allow_origin="http://localhost:5173", allow_headers=["content-type"], allow_methods=["POST"])
 
 # warning, these will also execute if this module imported
 if not current_process().daemon:
