@@ -37,8 +37,7 @@ async function* fetchGeoRegions(dtlvl, ...parents) {
 async function updateGeoBoundValues(districts) {
   let res = new Map()
 
-  const info = await ky.post('http://localhost:8086/endpoints/publicdebt/query', 
-  // const info = await ky.post('https://web.cdyhamc.com/endpoints/publicdebt/query', 
+  const info = await ky.post('https://web.cdyhamc.com/endpoints/publicdebt/query', 
     {json: {districts: districts}}).json();
 
   for (let dst of districts) {
