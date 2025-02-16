@@ -15,7 +15,7 @@ from multiprocessing import current_process
 
 
 app = Quart(__name__)
-app = cors(app, allow_origin="http://localhost:5173", allow_headers=["content-type"], allow_methods=["POST"])
+app = cors(app, allow_origin=["https://web.cdyhamc.com", "https://web.cdyhamc.com:9051"], allow_headers=["content-type"], allow_methods=["POST"])
 
 # warning, these will also execute if this module imported
 if not current_process().daemon:
