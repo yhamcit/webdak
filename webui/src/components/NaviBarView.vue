@@ -5,12 +5,12 @@ import { onMounted } from 'vue';
 const emit = defineEmits(['uiReady', 'returnUpper', 'changeRegion'])
 
 const props = defineProps({
-  region: {}, 
+  province: String, 
   title: String, 
   l1: Array,
 })
 
-const { region, title, l1 } = props
+const { province, title, l1 } = props
 
 
 onMounted(() => {
@@ -25,12 +25,12 @@ onMounted(() => {
     <h1>{{ title }}</h1>
   </div>
   <div>
-    <h3>{{ `${region.province}` }}</h3>
+    <h3>{{ province }}</h3>
   </div>
   <div class="wrapper">
     <div class="wrapper">
       <v-select label="- 选择省 -"
-        v-model="region.province"
+        v-model="province"
         :items="l1"
         @update:modelValue="emit('changeRegion', $event)"
         >

@@ -2,40 +2,33 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 import ky from 'ky'
-import { walkIdentifiers } from 'vue/compiler-sfc'
 
 
 const defaultRegion = '全国'
 
 
-async function* fetchGeoRegions(dtlvl, ...parents) {
+async function fetchAllGeoRegions(dtlvl, {upper}) {
 
-  if (parents.length == 0) {
-    parents = [null]
+  let params = new URLSearchParams({
+    key: 'e28e8e04218b803aceeffed7d28fd9c9', 
+    subdistrict: dtlvl,
+  })
+
+  if (upper) {
+    params.append('keywords', upper)
   }
 
-  for (let upper of parents) {
-    let params = new URLSearchParams({
-      key: 'e28e8e04218b803aceeffed7d28fd9c9', 
-      subdistrict: dtlvl,
-    })
+  const info = await ky.get('https://restapi.amap.com/v3/config/district', 
+    {searchParams: params}).json();
 
-    if (upper) {
-      params.append('keywords', upper)
-    }
-
-    const info = await ky.get('https://restapi.amap.com/v3/config/district', 
-      {searchParams: params}).json();
-
-    if (info.status != '1' || info.infocode !== '10000') {
-      break
-    }
-
-    yield info.districts[0].districts
+  if (info.status != '1' || info.infocode !== '10000') {
+    return []
   }
+
+  return info.districts[0].districts
 }
 
-async function updateGeoBoundValues(districts) {
+async function fetchGeoBoundValues(districts) {
   let res = new Map()
 
   const info = await ky.post('http://localhost:8086/endpoints/publicdebt/query', 
@@ -44,60 +37,58 @@ async function updateGeoBoundValues(districts) {
 
   // TODO: Mock values here
   for (let dst of districts) {
-    res.set(dst, 7894.24)
-  }
+    let {name, adcode, gdp =7894.24} = dst
+    res.set(dst.adcode, {name: name, adcode: adcode, gdp: gdp})
   // TODO: Mock values here
+  }
 
   return res
 }
 
 
-function newGeoJson(id, geo, gdp) {
-  return {
-    "type": "Feature",
-    "geometry": {
-      "type": "Point",
-      "coordinates": [
-        geo.center.split(',').map((d) => parseFloat(d))
-      ]
-    },
-    "properties": {
-      "id": id,
-      "名称": geo.name,
-      // "地址": name,
-      "adcode_n": geo.adcode,
-      "adcode_p": geo.province,
-      "adcode_c": -1,
-      "adcode_d": -1,
-      "point_status": 0,
-      "创建时间": "2021-01-27 14:45:12",
-      "修改时间": "2021-01-27 14:45:12",
-      // "人口": 2884.62,
-      "GDP": gpd,
-      // "人均GDP": 27367,
-      // "人均折美元": 4043
-    }
-  }
 
+function newGeoJson(id, geo, info) {
+  return {
+    feature: {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": geo.center.split(',').map((d) => parseFloat(d))
+      },
+      "properties": {
+        "id": id,
+        "名称": geo.name,
+        // "地址": name,
+        "adcode_n": -1,
+        "adcode_p": -1,
+        "adcode_c": -1,
+        "adcode_d": -1,
+        "point_status": 0,
+        "创建时间": "2021-01-27 14:45:12",
+        "修改时间": "2021-01-27 14:45:12",
+        "GDP": info.gdp,
+      }
+    },
+    info: info,
+  }
 }
 
-async function updateGeoRegions(parent, cached) {
-  let collection = new Map()
 
-  for await (const regions of fetchGeoRegions(1, parent)) {
-    // All in one collection
-    for (let region of regions) {
-      if (!cached.has(region.adcode)) {
-        collection.set(region.adcode, region)
+async function updateGeoRegionsJson(collection, cached) {
+
+  if (collection.length  > 0) {
+    let queryset = collection.reduce((acc, v) => {
+      if (!cached.has(v.adcode)) {
+        acc.push(v)
       }
-    }
-  }
+      return acc
+    }, [])
 
-  if (collection.size  > 0) {
-    let debts = await updateGeoBoundValues(Array.from(collection.value()).map((value) => value.name))
+    let debtresults = await fetchGeoBoundValues(queryset)
 
-    for (const [name, value] of debts) {
-      cached.set(region.adcode, newGeoJson(length, name, collection.get(name)))
+    for (let region of collection) {
+      cached.set(region.adcode, 
+                 newGeoJson(length, region, debtresults.get(region.adcode)))
     }
   }
 }
@@ -105,41 +96,65 @@ async function updateGeoRegions(parent, cached) {
 
 export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
   // States
-  const geojson = ref({
-    features: []
-  })
+  // Current displaying top-region's adcode
+  const adcode = ref([])
+  // Current displaying regions's adcodes
+  const fastrefs = ref(new Map())
+  // Cached districts' geo-info
+  const caches = ref(new Map())
 
-  const region = ref({
-    province: defaultRegion
-  })
-
-  const cached = ref(new Map())
-
-  // Getters
-  const adcode = computed(() => {
-    if (cached.value.has(region.province)) {
-      return cached.value[region.province].adcode
-    } else {
-      return null
+  const geoinfo = computed(() => { 
+    return {
+      type: "FeatureCollection",
+      features: Array.from(fastrefs.value.values()).map((v) => caches.value.get(v).feature)
     }
   })
 
-  function reset() {
-    region.value.province = defaultRegion
-  }
+
+  // Getters
+  const province = computed(() => {
+    if (adcode.value.length > 0) {
+      return caches.value.get(adcode.value.at(-1)).info.name 
+    } else {
+      return defaultRegion
+    }
+  })
+
 
   // Actions
-  async function initTopRegions() {
-    await updateGeoRegions(null, cached.value)
+  function reset() {
+    adcode.value = []
+
+    return true
   }
 
-  async function updateMetropolises(province) {
+  function updateRegions(collection) {
+    for (let region of collection) {
+      fastrefs.value.set(region.name, region.adcode)
+    }
+  }
 
-    geojson.value.features.splice(0, vals.length)
+  async function regionalUpdate({upper}) {
 
-    // await updateGeoRegions(province, cached.value.l2, geojson.value.features)
+    if (upper) {
+      if (!fastrefs.value.has(upper)) {
+        throw new Error(`Region ${region} not found`)
+      }
+
+      targets.push(fastrefs.value.get(upper))
+
+      adcode.value.push(targets.at(-1))
+    }
+
+    let collection = await fetchAllGeoRegions(1, {upper})
+
+    fastrefs.value = new Map(collection.map((item) => [item.name, item.adcode]))
+
+    await updateGeoRegionsJson(collection, caches.value)
+
+    return true
   }
 
   // expose attributes
-  return {geojson, region, cached, adcode, reset, initTopRegions, updateMetropolises}
+  return {fastrefs, geoinfo, province, reset, regionalUpdate}
 })

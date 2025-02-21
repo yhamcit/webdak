@@ -11,26 +11,20 @@ import NaviBarView from '@/components/NaviBarView.vue'
 const defaultTitle = '地方公共债务数据'
 
 const store = useGeoJsonStore()
-const { region, cached } = storeToRefs(store)
+const { fastrefs, province } = storeToRefs(store)
 
 
 // Data used by navi bar UI Component
 const naviBarUiModel = ref({
   title: defaultTitle,
   l1: [],
-  // l2: [],
 })
 
-resetRegion()
+// resetRegion()
 
-async function onRegionChange (selected_value) {
-
-  if (selected_value) {
-
-    region.value.province = selected_value
-
-    // udpate data store
-    await store.updateMetropolises (selected_value)
+async function onRegionChange (upper) {
+  if (upper) {
+    await store.regionalUpdate({upper})
   }
 }
 
@@ -39,13 +33,14 @@ function resetRegion() {
   store.reset()
 
   // update ui selections
-  naviBarUiModel.value.l1.splice(0, naviBarUiModel.value.length, ...[...cached.value.keys()])
+  naviBarUiModel.value.l1.splice(0, naviBarUiModel.value.length, 
+    ...Array.from(fastrefs.value.keys()))
 }
 
 
 async function onUiReady() {
   // udpate data store
-  await store.initTopRegions()
+  await store.regionalUpdate({})
 
   resetRegion()
 }
@@ -60,7 +55,7 @@ function onReturnUpper() {
 
 <template>
   <header>
-    <NaviBarView v-bind="naviBarUiModel" :region="region" 
+    <NaviBarView v-bind="naviBarUiModel" :province="province" 
       @returnUpper="onReturnUpper" 
       @ui-ready="onUiReady"
       @changeRegion="onRegionChange"
