@@ -11,13 +11,16 @@ import AMapLoader from '@amap/amap-jsapi-loader';
 
 
 const store = useGeoJsonStore()
-const { geoinfo, province } = storeToRefs(store)
+const { geoinfo } = storeToRefs(store)
 
 
-const emit = defineEmits(['change_province', 'change_metropolis'])
+const emit = defineEmits(['changeRegion'])
 
-var map = undefined;
+let {map, prismlayer} = {map: null, prismlayer: null}
+// var map = undefined;
 var colors = {};
+
+const status = {ready: false, loaded: false}
 
 
 // store.$subscribe((mutation, state) => {
@@ -29,31 +32,28 @@ var colors = {};
 // })
 
 store.$onAction(({name, store, args, after, onError }) => {
-  console.log('Pinia data store action probed: ', name);
-  // console.log('Store:', store);
-  // console.log('Arguments:', args);
+  console.log('Pinia data store action probed: ', name, "arguments: ", args);
+
   if (name === 'regionalUpdate') {
 
     after((result) => {
       if (result) {
-        dropInPrismDataLayer(map, geoinfo)
+        updatePrismLayerData()
       }
-      console.log('Map data updated: ', result)
     });
     onError((error) => {
-      console.log('Error:', error)
+      console.log('Error happend during regionalUpdate action: ', error)
     });
 
   } else if (name === 'reset') {
 
     after((result) => {
       if (result) {
-        dropInPrismDataLayer(map, geoinfo)
+        updatePrismLayerData()
       }
-      console.log('Map data reseted: ', result)
     });
     onError((error) => {
-      console.log('Error:', error)
+      console.log('Error happend during reset action: ', error)
     });
 
   }
@@ -66,13 +66,17 @@ store.$onAction(({name, store, args, after, onError }) => {
 //     deep: true 
 //   })
 
-onMounted(async () => {
-  window._AMapSecurityConfig = {securityJsCode: "cf5dba8895ae3f072aa48bc8be4c0db3",};
-
+function resetMap() {
   if (map) {
     map.destroy();
   }
   map = null
+}
+
+onMounted(async () => {
+  window._AMapSecurityConfig = {securityJsCode: "cf5dba8895ae3f072aa48bc8be4c0db3",};
+
+  resetMap()
 
   await AMapLoader.load({
     key: "33300d9b8a904f22b218486056876efa",
@@ -83,7 +87,7 @@ onMounted(async () => {
     }
   })
   .then((AMap) => {
-    map = initAMap(AMap);
+    map = initAMapWithLayers(AMap);
   })
   .catch((e) => {
     console.log(e);
@@ -91,8 +95,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  map.destroy();
-  map = null;
+  resetMap()
 });
 
 
@@ -107,7 +110,7 @@ var getColorByAdcode = function (adcode) {
   };
 
 
-function initAMap(AMap) {
+function createMapWithAMap(AMap, handlers) {
   window.movingDraw = true;
 
   var countryLayer = new AMap.DistrictLayer.Country({
@@ -126,7 +129,7 @@ function initAMap(AMap) {
       }
     })
 
-  var map = new AMap.Map('map', {
+  let map = new AMap.Map('map', {
     zoom: 5,
     showLabel: false,
     viewMode: '3D',
@@ -142,46 +145,31 @@ function initAMap(AMap) {
     mapStyle: 'amap://styles/dark'
   });
 
-
-  map.on('click', function (ev) {
-      var px = ev.pixel;
-
-      var props = countryLayer.getDistrictByContainerPos(px);
-      if (props) {
-        if (typeof props.province !== 'undefined' && props.province) {
-          props.province = undefined;
-        } else {
-          let provinceLayer = putProvinceLayerOntop(map, props)
-          zoomInProvice(pl, provinceLayer, countryLayer, props)
-          region.province = props.NAME_CHN
-          region.adcode_pro = props.adcode_pro
-        }
-      }
-    });
+  Object.entries(handlers).forEach((attrs) => {map.on(attrs[0], attrs[-1])})
 
   return map
 }
 
+function createPrismDataLayer(map) {
 
-function dropInPrismDataLayer(map, geoinfo) {
+  var layer = new Loca.PrismLayer({
+    zIndex: 10,
+    opacity: 0.8,
+    visible: false,
+    hasSide: true,
+  });
 
-  let loca = new Loca.Container({
+  let container = new Loca.Container({
     map,
   });
 
-  var geo = new Loca.GeoJSONSource({
-    data: geoinfo.value,
-    // url: 'https://a.amap.com/Loca/static/loca-v2/demos/mock_data/gdp.json',
-  });
-  // console.log(JSON.stringify(geoinfo.value))
-
-  loca.ambLight = {
+  container.ambLight = {
     intensity: 0.7,
     color: '#7b7bff',
     // color: 'lightsteelblue',
   };
 
-  loca.dirLight = {
+  container.dirLight = {
     intensity: 0.8,
     color: '#fff',
     // color: 'lightsteelblue',
@@ -189,23 +177,60 @@ function dropInPrismDataLayer(map, geoinfo) {
     position: [0, -1, 1],
   };
 
-  loca.pointLight = {
+  container.pointLight = {
     color: 'rgb(240,88,25)',
     position: [112.028276, 31.58538, 2000000],
     intensity: 3,
     distance: 5000000,
   };
 
-  var pl = new Loca.PrismLayer({
-    zIndex: 10,
-    opacity: 0.8,
-    visible: false,
-    hasSide: true,
+  container.add(layer)
+
+  return layer;
+}
+
+function initAMapWithLayers(AMap) {
+  map = createMapWithAMap(AMap, {
+    click: 
+      (ev) => {
+        var px = ev.pixel;
+
+        var props = countryLayer.getDistrictByContainerPos(px);
+        if (props) {
+          if (typeof props.province !== 'undefined' && props.province) {
+            props.province = undefined;
+          } else {
+            let provinceLayer = putProvinceLayerOntop(map, props)
+            zoomInProvice(pl, provinceLayer, countryLayer, props)
+            region.province = props.NAME_CHN
+            region.adcode_pro = props.adcode_pro
+          }
+        }
+      }, 
+    complete: 
+      () => {},
+    mousemove:
+      () => {}
+  })
+
+  prismlayer = createPrismDataLayer(map)
+
+}
+
+
+function updatePrismLayerData() {
+  // if (!status.ready || status.loaded) {
+  //     return
+  // }
+
+  var geo = new Loca.GeoJSONSource({
+    data: geoinfo.value,
   });
+  // console.log(JSON.stringify(geoinfo.value))
 
-  pl.setSource(geo);
+  prismlayer.setSource(geo);
 
-  pl.setStyle({
+  prismlayer.setStyle({
     unit: 'meter',
     sideNumber: 4,
     topColor: (index, f) => {
@@ -226,30 +251,15 @@ function dropInPrismDataLayer(map, geoinfo) {
     rotation: 360,
     altitude: 0,
   });
-  loca.add(pl)
 
-  // map.on('mousemove', function (e) {
-  //   var feat = pl.queryFeature(e.pixel.toArray());
-  //   if (feat) {
-  //     // clickInfo.show();
-  //   } else {
-  //     // clickInfo.hide();
-  //   }
-  // });
-
-  map.on('complete', function () {
-    showPrismLayerAnimations(pl)
-  });
-
-  // showPrismLayerAnimations(pl)
-  // loca.animate.start();
+  showPrismLayerAnimations()
 }
 
-function showPrismLayerAnimations(pl) {
+function showPrismLayerAnimations() {
   setTimeout(function () {
-      pl.show(500);
+      prismlayer.show(500);
 
-      pl.addAnimate({
+      prismlayer.addAnimate({
         key: 'height',
         value: [0, 1],
         duration: 500,

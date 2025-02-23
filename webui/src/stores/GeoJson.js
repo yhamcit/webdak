@@ -76,7 +76,7 @@ function newGeoJson(id, geo, info) {
 
 async function updateGeoRegionsJson(collection, cached) {
 
-  if (collection.length  > 0) {
+  if (collection.length > 0) {
     let queryset = collection.reduce((acc, v) => {
       if (!cached.has(v.adcode)) {
         acc.push(v)
@@ -141,9 +141,7 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
         throw new Error(`Region ${region} not found`)
       }
 
-      targets.push(fastrefs.value.get(upper))
-
-      adcode.value.push(targets.at(-1))
+      adcode.value.push(fastrefs.value.get(upper))
     }
 
     let collection = await fetchAllGeoRegions(1, {upper})
