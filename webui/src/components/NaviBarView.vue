@@ -1,6 +1,6 @@
 <script setup>
 
-import { onMounted } from 'vue';
+// import { onMounted } from 'vue';
 
 const emit = defineEmits(['uiReady', 'returnUpper', 'changeRegion'])
 
@@ -13,9 +13,9 @@ const props = defineProps({
 const { province, title, l1 } = props
 
 
-onMounted(() => {
-  emit('uiReady', 'navibar')
-})
+// onMounted(() => {
+//   emit('uiReady', 'navibar')
+// })
 
 
 </script>

@@ -14,11 +14,18 @@ const store = useGeoJsonStore()
 const { geoinfo } = storeToRefs(store)
 
 
-const emit = defineEmits(['changeRegion'])
+const emit = defineEmits(['change-region', 'map-ready'])
 
 let {map, prismlayer} = {map: null, prismlayer: null}
 // var map = undefined;
 var colors = {};
+// 定义颜色停止点
+const colorStops = [
+  { stop: 0, color: hex2rgbColor("#1c6390") }, 
+  { stop: 0.5, color: hex2rgbColor("#f4e1e1") }, 
+  { stop: 1, color: hex2rgbColor("#9f383d") }, 
+]
+
 
 const status = {ready: false, loaded: false}
 
@@ -100,14 +107,73 @@ onUnmounted(() => {
 
 
 
-var getColorByAdcode = function (adcode) {
-    if (!colors[adcode]) {
-      var gb = Math.random() * 155 + 50;
-      colors[adcode] = 'rgb(' + gb + ',' + gb + ',255)';
-    }
+function hex2rgbColor(hex) {
+  // 去掉 # 号
+  hex = hex.replace(/^#/, '');
+  // 解析为 R, G, B
+  const bigint = parseInt(hex, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return [r, g, b];
+}
 
-    return colors[adcode];
-  };
+function rgbStr2rgbColor(rgb) {
+  return rgb.match(/\d+/g).map(Number);
+}
+
+function rgbColor2hex(rgb) {
+  return '#' + rgb.map(x => {
+    const hex = x.toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  }).join('');
+}
+
+function interpolateColor(color1, color2, factor) {
+  const result = color1.slice();
+  for (let i = 0; i < 3; i++) {
+    result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+  }
+  return result;
+}
+
+function getColorAtPosition(position, colorStops) {
+  // 找到最近的两个颜色停止点
+  let startIndex = 0;
+  for (let i = 0; i < colorStops.length; i++) {
+    if (colorStops[i].stop >= position) {
+      startIndex = i - 1;
+      break;
+    }
+  }
+  if (startIndex < 0) startIndex = 0;
+
+  const startStop = colorStops[startIndex];
+  const endStop = colorStops[startIndex + 1];
+
+  // 计算插值因子
+  const factor = (position - startStop.stop) / (endStop.stop - startStop.stop);
+
+  // 插值计算颜色
+  const interpolatedColor = interpolateColor(startStop.color, endStop.color, factor);
+
+  return `rgb(${interpolatedColor.join(',')})`;
+}
+
+
+var getColorByAdcode = function (adcode) {
+
+  if (!colors[adcode]) {
+    // 示例：获取 (random)% 处的颜色
+    const color = getColorAtPosition(Math.random(), colorStops);
+    // console.log('Color at 25%:', color); // 输出颜色值
+    // var gb = Math.random() * 155 + 50;
+    // colors[adcode] = 'rgb(' + gb + ',' + gb + ',255)';
+    colors[adcode] = color;
+  }
+
+  return colors[adcode];
+};
 
 
 function createMapWithAMap(AMap, handlers) {
@@ -129,7 +195,7 @@ function createMapWithAMap(AMap, handlers) {
       }
     })
 
-  let map = new AMap.Map('map', {
+  let map = new AMap.Map('mapContainer', {
     zoom: 5,
     showLabel: false,
     viewMode: '3D',
@@ -145,17 +211,32 @@ function createMapWithAMap(AMap, handlers) {
     mapStyle: 'amap://styles/dark'
   });
 
-  Object.entries(handlers).forEach((attrs) => {map.on(attrs[0], attrs[-1])})
+  Object.entries(handlers).forEach(([event, handler]) => {
+    map.on(event, handler);
+  });
+
+  // map.on('complete', function () {
+  //   console.log("map complete")
+  // });
 
   return map
 }
 
 function createPrismDataLayer(map) {
 
-  var layer = new Loca.PrismLayer({
+  // var layer = new Loca.PrismLayer({
+  //   zIndex: 10,
+  //   opacity: 0.8,
+  //   visible: false,
+  //   hasSide: true,
+  // });
+
+  var layer = new Loca.PolygonLayer({
+    // loca,
     zIndex: 10,
     opacity: 0.8,
-    visible: false,
+    cullface: 'none',
+    shininess: 10,
     hasSide: true,
   });
 
@@ -208,13 +289,14 @@ function initAMapWithLayers(AMap) {
         }
       }, 
     complete: 
-      () => {},
+      () => { 
+        emit('map-ready', 'amap')
+      },
     mousemove:
       () => {}
   })
 
   prismlayer = createPrismDataLayer(map)
-
 }
 
 
@@ -224,7 +306,8 @@ function updatePrismLayerData() {
   // }
 
   var geo = new Loca.GeoJSONSource({
-    data: geoinfo.value,
+    // data: geoinfo.value,
+    url: 'http://localhost:8086/statics/geopolygon'
   });
   // console.log(JSON.stringify(geoinfo.value))
 
@@ -234,15 +317,18 @@ function updatePrismLayerData() {
     unit: 'meter',
     sideNumber: 4,
     topColor: (index, f) => {
-      var n = f.properties['GDP'];
-      return n > 7000 ? '#E97091' : '#2852F1';
+      var adcode = f.properties['adcode'];
+      return getColorByAdcode(adcode);
     },
     sideTopColor: (index, f) => {
-      var n = f.properties['GDP'];
-      return n > 7000 ? '#E97091' : '#2852F1';
+      var adcode = f.properties['adcode'];
+      return getColorByAdcode(adcode);
     },
-    sideBottomColor: '#002bb9',
-    radius: 15000,
+    sideBottomColor: (index, f) => {
+      var adcode = f.properties['adcode'];
+      return getColorByAdcode(adcode);
+    },
+    // radius: 15000,
     height: (index, f) => {
       var props = f.properties;
       var height = Math.max(100, Math.sqrt(props['GDP']) * 9000 - 50000);
@@ -252,6 +338,28 @@ function updatePrismLayerData() {
     altitude: 0,
   });
 
+  // prismlayer.setStyle({
+  //   unit: 'meter',
+  //   sideNumber: 4,
+  //   topColor: (index, f) => {
+  //     var n = f.properties['GDP'];
+  //     return n > 7000 ? '#E97091' : '#2852F1';
+  //   },
+  //   sideTopColor: (index, f) => {
+  //     var n = f.properties['GDP'];
+  //     return n > 7000 ? '#E97091' : '#2852F1';
+  //   },
+  //   sideBottomColor: '#002bb9',
+  //   radius: 15000,
+  //   height: (index, f) => {
+  //     var props = f.properties;
+  //     var height = Math.max(100, Math.sqrt(props['GDP']) * 9000 - 50000);
+  //     return height;
+  //   },
+  //   rotation: 360,
+  //   altitude: 0,
+  // });
+
   showPrismLayerAnimations()
 }
 
@@ -260,42 +368,51 @@ function showPrismLayerAnimations() {
       prismlayer.show(500);
 
       prismlayer.addAnimate({
-        key: 'height',
-        value: [0, 1],
-        duration: 500,
-        easing: 'Linear',
-        transform: 2000,
-        random: true,
-        delay: 3000,
-      }, function () {
+          key: 'height',
+          value: [0, 1],
+          duration: 1000,
+          easing: 'CubicInOut',
+        }, function () {
           console.log('Map loading completed: Animation done');
       });
+
+      // prismlayer.addAnimate({
+      //   key: 'height',
+      //   value: [0, 1],
+      //   duration: 500,
+      //   easing: 'Linear',
+      //   transform: 2000,
+      //   random: true,
+      //   delay: 3000,
+      // }, function () {
+      //     console.log('Map loading completed: Animation done');
+      // });
     }, 
     800);
 }
 
-function putProvinceLayerOntop(map, targetProv) {
+// function putProvinceLayerOntop(map, targetProv) {
 
-  var fg = new AMap.DistrictLayer.Province({
-    zIndex: 6,
-    opacity: 0.6,
-    adcode: targetProv.adcode_pro,
-    depth: 1,
-    styles: {
-      'fill': function (properties) {
-        var adcode = properties.adcode;
-        return getColorByAdcode(adcode);
-      },
-      'province-stroke': 'cornflowerblue',
-      'city-stroke': 'white', // 中国地级市边界
-      'county-stroke': 'rgba(255,255,255,0.5)' // 中国区县边界
-    }
-  });
+//   var fg = new AMap.DistrictLayer.Province({
+//     zIndex: 6,
+//     opacity: 0.6,
+//     adcode: targetProv.adcode_pro,
+//     depth: 1,
+//     styles: {
+//       'fill': function (properties) {
+//         var adcode = properties.adcode;
+//         return getColorByAdcode(adcode);
+//       },
+//       'province-stroke': 'cornflowerblue',
+//       'city-stroke': 'white', // 中国地级市边界
+//       'county-stroke': 'rgba(255,255,255,0.5)' // 中国区县边界
+//     }
+//   });
 
-  fg.setMap(map);
+//   fg.setMap(map);
 
-  return fg
-}
+//   return fg
+// }
 
 function zoomInProvice(top, fg, bg, targetProv) {
   if (top) {
@@ -340,11 +457,12 @@ function zoomInProvice(top, fg, bg, targetProv) {
 }
 
 
+
+
 </script>
 
 <template>
-  <div id="map"></div>
-  <div id="container"></div>
+  <div id="mapContainer"></div>
 </template>
 
 
