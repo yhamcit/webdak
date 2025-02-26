@@ -16,7 +16,7 @@ const { geoinfo } = storeToRefs(store)
 
 const emit = defineEmits(['change-region', 'map-ready'])
 
-let {map, prismlayer} = {map: null, prismlayer: null}
+let {map, chart} = {map: null, chart: null}
 // var map = undefined;
 var colors = {};
 // 定义颜色停止点
@@ -157,7 +157,8 @@ function getColorAtPosition(position, colorStops) {
   // 插值计算颜色
   const interpolatedColor = interpolateColor(startStop.color, endStop.color, factor);
 
-  return `rgb(${interpolatedColor.join(',')})`;
+  // return `rgb(${interpolatedColor.join(',')})`;
+  return interpolatedColor
 }
 
 
@@ -165,11 +166,11 @@ var getColorByAdcode = function (adcode) {
 
   if (!colors[adcode]) {
     // 示例：获取 (random)% 处的颜色
-    const color = getColorAtPosition(Math.random(), colorStops);
+    const rgb = getColorAtPosition(Math.random(), colorStops);
     // console.log('Color at 25%:', color); // 输出颜色值
     // var gb = Math.random() * 155 + 50;
     // colors[adcode] = 'rgb(' + gb + ',' + gb + ',255)';
-    colors[adcode] = color;
+    colors[adcode] = rgbColor2hex(rgb);
   }
 
   return colors[adcode];
@@ -196,28 +197,27 @@ function createMapWithAMap(AMap, handlers) {
     })
 
   let map = new AMap.Map('mapContainer', {
-    zoom: 5,
+    zoom: 7,
     showLabel: false,
     viewMode: '3D',
     visible: false,
     pitch: 45,
-    center: [108.940174, 34.341568],  // center: [103.594884, 36.964587],
+    // center: [108.940174, 34.341568],  // center: [103.594884, 36.964587],
+    center: [120.109233,30.246411],
+    showLabel: false,
     rotateEnable: false,
     doubleClickZoom: false, 
     showBuildingBlock: false,
     layers: [
       countryLayer,
     ],
-    mapStyle: 'amap://styles/dark'
+    mapStyle: 'amap://styles/dark',
   });
 
   Object.entries(handlers).forEach(([event, handler]) => {
     map.on(event, handler);
   });
 
-  // map.on('complete', function () {
-  //   console.log("map complete")
-  // });
 
   return map
 }
@@ -235,7 +235,7 @@ function createPrismDataLayer(map) {
     // loca,
     zIndex: 10,
     opacity: 0.8,
-    cullface: 'none',
+    // cullface: 'none',
     shininess: 10,
     hasSide: true,
   });
@@ -267,6 +267,32 @@ function createPrismDataLayer(map) {
 
   container.add(layer)
 
+  // 图例
+  new Loca.Legend({
+      loca: container,
+      title: {
+          label: '债务占比',
+          fontColor: '#eee',
+      },
+      style: {
+          backgroundColor: 'rgba(255,255,255,0.1)',
+          left: '20px',
+          bottom: '40px',
+      },
+      dataMap: [
+          { label: '350%', color: rgbColor2hex(getColorAtPosition(1.0, colorStops)) },
+          { label: '300%', color: rgbColor2hex(getColorAtPosition(0.9, colorStops)) },
+          { label: '250%', color: rgbColor2hex(getColorAtPosition(0.8, colorStops)) },
+          { label: '200%', color: rgbColor2hex(getColorAtPosition(0.7, colorStops)) },
+          { label: '250%', color: rgbColor2hex(getColorAtPosition(0.6, colorStops)) },
+          { label: '100%', color: rgbColor2hex(getColorAtPosition(0.5, colorStops)) },
+          { label: '<90%', color: rgbColor2hex(getColorAtPosition(0.4, colorStops)) },
+          { label: '<80%', color: rgbColor2hex(getColorAtPosition(0.3, colorStops)) },
+          { label: '<70%', color: rgbColor2hex(getColorAtPosition(0.2, colorStops)) },
+          { label: '<60%', color: rgbColor2hex(getColorAtPosition(0.1, colorStops)) },
+      ].reverse(),
+  });
+
   return layer;
 }
 
@@ -276,17 +302,17 @@ function initAMapWithLayers(AMap) {
       (ev) => {
         var px = ev.pixel;
 
-        var props = countryLayer.getDistrictByContainerPos(px);
-        if (props) {
-          if (typeof props.province !== 'undefined' && props.province) {
-            props.province = undefined;
-          } else {
-            let provinceLayer = putProvinceLayerOntop(map, props)
-            zoomInProvice(pl, provinceLayer, countryLayer, props)
-            region.province = props.NAME_CHN
-            region.adcode_pro = props.adcode_pro
-          }
-        }
+        // var props = countryLayer.getDistrictByContainerPos(px);
+        // if (props) {
+        //   if (typeof props.province !== 'undefined' && props.province) {
+        //     props.province = undefined;
+        //   } else {
+        //     let provinceLayer = putProvinceLayerOntop(map, props)
+        //     zoomInProvice(pl, provinceLayer, countryLayer, props)
+        //     region.province = props.NAME_CHN
+        //     region.adcode_pro = props.adcode_pro
+        //   }
+        // }
       }, 
     complete: 
       () => { 
@@ -296,46 +322,50 @@ function initAMapWithLayers(AMap) {
       () => {}
   })
 
-  prismlayer = createPrismDataLayer(map)
+  chart = createPrismDataLayer(map)
 }
 
 
 function updatePrismLayerData() {
-  // if (!status.ready || status.loaded) {
-  //     return
-  // }
-
+  // // if (!status.ready || status.loaded) {
+  // //     return
+  // // }
   var geo = new Loca.GeoJSONSource({
-    // data: geoinfo.value,
-    url: 'http://localhost:8086/statics/geopolygon'
+      url: 'https://a.amap.com/Loca/static/loca-v2/demos/mock_data/hz_gn.json',
   });
-  // console.log(JSON.stringify(geoinfo.value))
 
-  prismlayer.setSource(geo);
+  // var geo = new Loca.GeoJSONSource({
+  //   // data: geoinfo.value,
+  //   url: 'http://localhost:8086/statics/geopolygon'
+  //   // url: 'https://a.amap.com/Loca/static/loca-v2/demos/mock_data/hz_gn.json',
+  // });
+  // // console.log(JSON.stringify(geoinfo.value))
 
-  prismlayer.setStyle({
-    unit: 'meter',
-    sideNumber: 4,
+  // prismlayer.setSource(geo);
+
+
+  chart.setSource(geo);
+  chart.setStyle({
+    altitude: 0,
     topColor: (index, f) => {
-      var adcode = f.properties['adcode'];
+      // var adcode = f.properties['adcode'];
+      var adcode = '00000' + index
       return getColorByAdcode(adcode);
     },
     sideTopColor: (index, f) => {
-      var adcode = f.properties['adcode'];
+      // var adcode = f.properties['adcode'];
+      var adcode = '00000' + index
       return getColorByAdcode(adcode);
     },
     sideBottomColor: (index, f) => {
-      var adcode = f.properties['adcode'];
+      // var adcode = f.properties['adcode'];
+      var adcode = '00000' + index
       return getColorByAdcode(adcode);
     },
     // radius: 15000,
-    height: (index, f) => {
-      var props = f.properties;
-      var height = Math.max(100, Math.sqrt(props['GDP']) * 9000 - 50000);
-      return height;
+    height: function (index, feature) {
+      return Math.random() * 20000
     },
-    rotation: 360,
-    altitude: 0,
   });
 
   // prismlayer.setStyle({
@@ -365,9 +395,9 @@ function updatePrismLayerData() {
 
 function showPrismLayerAnimations() {
   setTimeout(function () {
-      prismlayer.show(500);
+      chart.show(500);
 
-      prismlayer.addAnimate({
+      chart.addAnimate({
           key: 'height',
           value: [0, 1],
           duration: 1000,
@@ -388,7 +418,7 @@ function showPrismLayerAnimations() {
       //     console.log('Map loading completed: Animation done');
       // });
     }, 
-    800);
+    600);
 }
 
 // function putProvinceLayerOntop(map, targetProv) {

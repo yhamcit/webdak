@@ -36,6 +36,22 @@ async function fetchGeoBoundValues(districts) {
 }
 
 
+async function fetchStaticGeoPolygons() {
+
+  const info = await ky.get('http://localhost:8086/static/geopolygon.gz', 
+    { headers: {
+      'Accept-Encoding': 'gzip', 
+      'content-type': 'application/json'
+    }}).json();
+
+  console.log(info)
+
+  return info
+
+  // return new Map(districts.map((n) => [n.adcode, Math.random() * 10000]))
+}
+
+
 
 function newGeoJson(geo, value, polyline) {
   return {
@@ -136,19 +152,22 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
       adcode.value.push(fastrefs.value.get(scope).adcode)
     }
 
-    const area = await queryRegionsGeoInfo({subdistrict: 1})
-    if (area) {
-      fastrefs.value = new Map(
-        area.districts.map((n) => [n.name, n]
-      ))
+    await fetchStaticGeoPolygons()
 
-      await updassembleRegionsGeoJson(area.districts, caches.value, fastrefs.value)
+    // const area = await queryRegionsGeoInfo({subdistrict: 1})
+    // if (area) {
+    //   fastrefs.value = new Map(
+    //     area.districts.map((n) => [n.name, n]
+    //   ))
 
-      return true
-    }
+    //   await updassembleRegionsGeoJson(area.districts, caches.value, fastrefs.value)
 
-    console.log(`Failed to query scope ${scope}`)
-    return false
+    //   return true
+    // }
+
+    // console.log(`Failed to query scope ${scope}`)
+    // return false
+    return true
   }
 
   // expose attributes
