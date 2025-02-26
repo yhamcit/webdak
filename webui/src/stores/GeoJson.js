@@ -44,14 +44,24 @@ async function fetchStaticGeoPolygons() {
       'content-type': 'application/json'
     }}).json();
 
-  console.log(info)
-
   return info
-
-  // return new Map(districts.map((n) => [n.adcode, Math.random() * 10000]))
 }
 
-
+function geoProperties(geo, value) {
+  return {
+    // "id": id,
+    "name": geo.name,
+    "adcode": geo.adcode,
+    "center" : geo.center.split(',').map((d) => parseFloat(d)),
+    // "adcode_n": -1,
+    "adcode_p": -1,
+    "adcode_c": -1,
+    // "point_status": 0,
+    // "创建时间": "2021-01-27 14:45:12",
+    // "修改时间": "2021-01-27 14:45:12",
+    "GDP": value,
+  }
+}
 
 function newGeoJson(geo, value, polyline) {
   return {
@@ -61,19 +71,7 @@ function newGeoJson(geo, value, polyline) {
         "type": "Polygon",
         "coordinates": polyline.split(';').map((d) => d.split(',').map((d) => parseFloat(d)))
       },
-      "properties": {
-        // "id": id,
-        "name": geo.name,
-        "adcode": geo.adcode,
-        "center" : geo.center.split(',').map((d) => parseFloat(d)),
-        // "adcode_n": -1,
-        "adcode_p": -1,
-        "adcode_c": -1,
-        // "point_status": 0,
-        // "创建时间": "2021-01-27 14:45:12",
-        // "修改时间": "2021-01-27 14:45:12",
-        "GDP": value,
-      }
+      "properties": geoProperties(geo, value),
     },
   }
 }
@@ -82,10 +80,16 @@ function newGeoJson(geo, value, polyline) {
 async function updassembleRegionsGeoJson(regions, caches, fastrefs) {
 
   if (regions.length > 0) {
+    const debtdata = await fetchGeoBoundValues(regions.map((n) => n.adcode))
+
     const queries = regions.filter((n) => !caches.has(n.adcode))
-    const debtdata = await fetchGeoBoundValues(queries.map((n) => n.adcode))
 
     for (let target of queries) {
+      if (caches.has(target.adcode)) {
+        geo = caches.get(target.adcode)
+        geo.properties = geoProperties(target, debtdata.get(target.adcode))
+        continue
+      }
 
       const info = await queryRegionsGeoInfo({ subdistrict: 0, keywords: target.adcode, extensions: "all" })
 
@@ -93,7 +97,6 @@ async function updassembleRegionsGeoJson(regions, caches, fastrefs) {
         caches.set(target.adcode, 
           newGeoJson(target, debtdata.get(target.adcode), info.polyline))
       }
-
     }
   }
 }
@@ -136,8 +139,14 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
 
 
   // Actions
-  function reset() {
+  async function reset() {
     adcode.value = []
+
+    let geos = await fetchStaticGeoPolygons()
+
+    caches.value = new Map(
+      geos.features.map((n) => [n.properties.adcode, n])
+    )
 
     return true
   }
@@ -152,22 +161,19 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
       adcode.value.push(fastrefs.value.get(scope).adcode)
     }
 
-    await fetchStaticGeoPolygons()
+    const area = await queryRegionsGeoInfo({subdistrict: 1})
+    if (area) {
+      fastrefs.value = new Map(
+        area.districts.map((n) => [n.name, n]
+      ))
 
-    // const area = await queryRegionsGeoInfo({subdistrict: 1})
-    // if (area) {
-    //   fastrefs.value = new Map(
-    //     area.districts.map((n) => [n.name, n]
-    //   ))
+      await updassembleRegionsGeoJson(area.districts, caches.value, fastrefs.value)
 
-    //   await updassembleRegionsGeoJson(area.districts, caches.value, fastrefs.value)
+      return true
+    }
 
-    //   return true
-    // }
-
-    // console.log(`Failed to query scope ${scope}`)
-    // return false
-    return true
+    console.log(`Failed to query scope ${scope}`)
+    return false
   }
 
   // expose attributes

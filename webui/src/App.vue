@@ -20,7 +20,6 @@ const naviBarUiModel = ref({
   l1: [],
 })
 
-// resetRegion()
 
 async function onRegionChange(scope) {
   if (upper) {
@@ -39,11 +38,11 @@ function resetRegion() {
 
 
 async function onMapReady() {
-  console.log('APP: Map is ready')
-  // udpate data store
-  await store.regionalUpdate({})
+  console.log('App: Map is ready')
 
-  // resetRegion()
+  resetRegion()
+  
+  await store.regionalUpdate({})
 }
 
 

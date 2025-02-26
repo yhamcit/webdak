@@ -56,7 +56,7 @@ store.$onAction(({name, store, args, after, onError }) => {
 
     after((result) => {
       if (result) {
-        updatePrismLayerData()
+        //updatePrismLayerData()
       }
     });
     onError((error) => {
