@@ -20,11 +20,10 @@ const naviBarUiModel = ref({
   l1: [],
 })
 
-// resetRegion()
 
-async function onRegionChange (upper) {
+async function onRegionChange(scope) {
   if (upper) {
-    await store.regionalUpdate({upper})
+    await store.regionalUpdate({scope})
   }
 }
 
@@ -38,11 +37,12 @@ function resetRegion() {
 }
 
 
-async function onUiReady() {
-  // udpate data store
-  await store.regionalUpdate({})
+async function onMapReady() {
+  console.log('App: Map is ready')
 
   resetRegion()
+  
+  await store.regionalUpdate({})
 }
 
 
@@ -57,12 +57,13 @@ function onReturnUpper() {
   <header>
     <NaviBarView v-bind="naviBarUiModel" :province="province" 
       @returnUpper="onReturnUpper" 
-      @ui-ready="onUiReady"
-      @changeRegion="onRegionChange"
-      @changeMetropolis="onMetropolisChange"></NaviBarView>
+      @change-region="onRegionChange"></NaviBarView>
   </header>
 
-  <RouterView />
+  <!-- <RouterView /> -->
+  <router-view v-slot="{ Component }">
+    <component :is="Component" @map-ready="onMapReady" />
+  </router-view>
 </template>
 
 <style scoped>

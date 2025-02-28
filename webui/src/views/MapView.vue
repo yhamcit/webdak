@@ -2,12 +2,17 @@
 
 import MapContainer from '@/components/MapContainer.vue';
 
+const emit = defineEmits(['mapReady']);
+
+function onMapReady() {
+  // 继续向外层抛出
+  emit('map-ready', 'amap')
+}
+
 </script>
 
 <template>
-  <main>
-    <MapContainer/>
-  </main>
+  <MapContainer @map-ready="onMapReady" />
 </template>
 
 <style scoped>
