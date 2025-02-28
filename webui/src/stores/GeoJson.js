@@ -36,9 +36,9 @@ async function fetchGeoBoundValues(districts) {
 }
 
 
-async function fetchStaticGeoPolygons() {
+async function fetchStaticGeoPolygons(adcode, level) {
 
-  const info = await ky.get('http://localhost:8086/static/geopolygon.gz', 
+  const info = await ky.get(`http://localhost:8086/static/adcod-${adcode}-${level}.gz`, 
     { headers: {
       'Accept-Encoding': 'gzip', 
       'content-type': 'application/json'
@@ -104,8 +104,9 @@ async function updassembleRegionsGeoJson(regions, caches, fastrefs) {
 
 export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
   // States
+  const showLowerLevel = ref(false)
   // Current displaying top-region's adcode
-  const adcode = ref([])
+  const adcode = ref(['100000'])
   // Current displaying regions's adcodes
   const fastrefs = ref(new Map())
   // Cached districts' geo-info
@@ -131,18 +132,25 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
   // Getters
   const province = computed(() => {
     if (adcode.value.length > 0) {
-      return caches.value.get(adcode.value.at(-1)).info.name 
+      return caches.value.get(adcode.value[-1]).info.name 
     } else {
       return defaultRegion
+    }
+  })
+
+  const dislevel = computed(() => {
+    if (showLowerLevel.value) {
+      return 2
+    } else {
+      return 1
     }
   })
 
 
   // Actions
   async function reset() {
-    adcode.value = []
 
-    let geos = await fetchStaticGeoPolygons()
+    let geos = await fetchStaticGeoPolygons(adcode.value[-1], dislevel)
 
     caches.value = new Map(
       geos.features.map((n) => [n.properties.adcode, n])
