@@ -45,7 +45,7 @@ store.$onAction(({name, store, args, after, onError }) => {
 
     after((result) => {
       if (result) {
-        updatePrismLayerData()
+        updateChartLayerData()
       }
     });
     onError((error) => {
@@ -222,7 +222,7 @@ function createMapWithAMap(AMap, handlers) {
   return map
 }
 
-function createPrismDataLayer(map) {
+function createChartLayer(map) {
 
   // var layer = new Loca.PrismLayer({
   //   zIndex: 10,
@@ -322,11 +322,11 @@ function initAMapWithLayers(AMap) {
       () => {}
   })
 
-  chart = createPrismDataLayer(map)
+  chart = createChartLayer(map)
 }
 
 
-function updatePrismLayerData() {
+function updateChartLayerData() {
   // // if (!status.ready || status.loaded) {
   // //     return
   // // }
@@ -338,32 +338,16 @@ function updatePrismLayerData() {
   var geo = new Loca.GeoJSONSource({
     data: geoinfo.value,
   });
-  // console.log(JSON.stringify(geoinfo.value))
-
-  // prismlayer.setSource(geo);
-
-
   chart.setSource(geo);
+
   chart.setStyle({
     altitude: 0,
-    topColor: (index, f) => {
-      // var adcode = f.properties['adcode'];
-      var adcode = '00000' + index
-      return getColorByAdcode(adcode);
-    },
-    sideTopColor: (index, f) => {
-      // var adcode = f.properties['adcode'];
-      var adcode = '00000' + index
-      return getColorByAdcode(adcode);
-    },
-    sideBottomColor: (index, f) => {
-      // var adcode = f.properties['adcode'];
-      var adcode = '00000' + index
-      return getColorByAdcode(adcode);
-    },
+    topColor: (index, f) =>  getColorByAdcode(f.properties.adcode),
+    sideTopColor: (index, f) => getColorByAdcode(f.properties.adcode),
+    sideBottomColor: (index, f) => getColorByAdcode(f.properties.adcode),
     // radius: 15000,
     height: function (index, feature) {
-      return Math.random() * 20000
+      return Math.random() * 200000
     },
   });
 

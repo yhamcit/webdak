@@ -6,6 +6,57 @@ import ky from 'ky'
 
 const defaultRegion = '全国'
 
+/**
+ * Douglas-Peucker 抽稀算法（支持闭合环）
+ * @param {Array<[number, number]>} points 原始坐标点数组
+ * @param {number} epsilon 容差（单位：经纬度差值）
+ * @returns {Array<[number, number]>} 抽稀后的坐标点数组
+ */
+function douglasPeucker(points, epsilon) {
+  if (points.length <= 2) return points;
+
+  // 处理闭合环：将闭合点临时移除，抽稀后再闭合
+  const isClosed = JSON.stringify(points[0]) === JSON.stringify(points[points.length - 1]);
+  const workPoints = isClosed ? points.slice(0, -1) : points;
+
+  // 递归抽稀
+  const simplified = [];
+  let maxDist = 0;
+  let index = 0;
+
+  // 计算点到基线的最大垂直距离
+  const [start, end] = [workPoints[0], workPoints[workPoints.length - 1]];
+  for (let i = 1; i < workPoints.length - 1; i++) {
+      const dist = perpendicularDistance(workPoints[i], start, end);
+      if (dist > maxDist) {
+          maxDist = dist;
+          index = i;
+      }
+  }
+
+  // 递归处理
+  if (maxDist > epsilon) {
+      const left = douglasPeucker(workPoints.slice(0, index + 1), epsilon);
+      const right = douglasPeucker(workPoints.slice(index), epsilon);
+      simplified.push(...left.slice(0, -1), ...right);
+  } else {
+      simplified.push(start, end);
+  }
+
+  // 重新闭合环
+  return isClosed ? [...simplified, simplified[0]] : simplified;
+}
+
+// 计算点到线段的最短垂直距离
+function perpendicularDistance(point, lineStart, lineEnd) {
+  const [x, y] = point;
+  const [x1, y1] = lineStart;
+  const [x2, y2] = lineEnd;
+
+  const area = Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1);
+  const lineLength = Math.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2);
+  return lineLength === 0 ? 0 : area / lineLength;
+}
 
 async function queryRegionsGeoInfo(exts) {
 
@@ -123,9 +174,12 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
           console.log(`Missing adcode ${v.adcode}`)
           return false
         }
-      }).map((v) => 
-          caches.value.get(v.adcode)
-      )
+      }).map((v) => {
+          let item = caches.value.get(v.adcode)
+
+          item.geometry = {type: "Polygon", coordinates: [douglasPeucker(item.geometry.coordinates[0], 0.001)]}
+          return item
+      })
     }
   })
 
