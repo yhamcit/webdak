@@ -197,13 +197,13 @@ function createMapWithAMap(AMap, handlers) {
     })
 
   let map = new AMap.Map('mapContainer', {
-    zoom: 7,
+    zoom: 5.2,
     showLabel: false,
     viewMode: '3D',
     visible: false,
     pitch: 45,
-    // center: [108.940174, 34.341568],  // center: [103.594884, 36.964587],
-    center: [120.109233,30.246411],
+    center: [108.940174, 34.341568],  // center: [103.594884, 36.964587],
+    // center: [120.109233,30.246411],
     showLabel: false,
     rotateEnable: false,
     doubleClickZoom: false, 
@@ -330,16 +330,15 @@ function updatePrismLayerData() {
   // // if (!status.ready || status.loaded) {
   // //     return
   // // }
-  var geo = new Loca.GeoJSONSource({
-      url: 'https://a.amap.com/Loca/static/loca-v2/demos/mock_data/hz_gn.json',
-  });
 
   // var geo = new Loca.GeoJSONSource({
-  //   // data: geoinfo.value,
-  //   url: 'http://localhost:8086/statics/geopolygon'
-  //   // url: 'https://a.amap.com/Loca/static/loca-v2/demos/mock_data/hz_gn.json',
+  //     url: 'https://a.amap.com/Loca/static/loca-v2/demos/mock_data/hz_gn.json',
   // });
-  // // console.log(JSON.stringify(geoinfo.value))
+
+  var geo = new Loca.GeoJSONSource({
+    data: geoinfo.value,
+  });
+  // console.log(JSON.stringify(geoinfo.value))
 
   // prismlayer.setSource(geo);
 

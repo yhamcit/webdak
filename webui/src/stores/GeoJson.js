@@ -38,7 +38,7 @@ async function fetchGeoBoundValues(districts) {
 
 async function fetchStaticGeoPolygons(adcode, level) {
 
-  const info = await ky.get(`http://localhost:8086/static/adcod-${adcode}-${level}.gz`, 
+  const info = await ky.get(`http://localhost:8086/static/adcode-${adcode}-${level}.gz`, 
     { headers: {
       'Accept-Encoding': 'gzip', 
       'content-type': 'application/json'
@@ -124,15 +124,15 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
           return false
         }
       }).map((v) => 
-          caches.value.get(v.adcode).feature
+          caches.value.get(v.adcode)
       )
     }
   })
 
   // Getters
   const province = computed(() => {
-    if (adcode.value.length > 0) {
-      return caches.value.get(adcode.value[-1]).info.name 
+    if (adcode.value.length > 1) {
+      return caches.value.get(adcode.value[adcode.value.length - 1]).info.name 
     } else {
       return defaultRegion
     }
@@ -150,7 +150,9 @@ export const useGeoJsonStore = defineStore('useGeoJsonStore', () => {
   // Actions
   async function reset() {
 
-    let geos = await fetchStaticGeoPolygons(adcode.value[-1], dislevel)
+    adcode.value.splice(1, adcode.value.length - 1)
+
+    let geos = await fetchStaticGeoPolygons(adcode.value[adcode.value.length - 1], dislevel.value)
 
     caches.value = new Map(
       geos.features.map((n) => [n.properties.adcode, n])
